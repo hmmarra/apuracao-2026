@@ -1,0 +1,1962 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apuração Presidente 2026 · 2º turno</title>
+<style>
+  :root {
+    --red: #c4170c;
+    --fg: #1e293b;
+    --mut: #64748b;
+    --line: #e2e8f0;
+    --soft: #f8fafc;
+    --card-bg: #ffffff;
+    --green: #0a7a35;
+    --greenbg: #dcfce7;
+    --c1-color: #24338a;
+    --c2-color: #d2001f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    /* quadriculado igual ao do painel (linhas finas azuladas) sobre o degradê */
+    background-color: #040b19;
+    background-image:
+      linear-gradient(rgba(80,140,200,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(80,140,200,.07) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% 0%, #10264a 0%, #071330 45%, #040b19 100%);
+    background-size: 30px 30px, 30px 30px, 100% 100%;
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--fg);
+    font: 15px/1.4 "Open Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  /* TOPBAR: título, seletor da eleição, hora da última leitura e botão de atualizar */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding: 10px max(20px, calc((100% - 2360px) / 2));
+    background: linear-gradient(90deg, #07142b 0%, #0f2a4d 55%, #07142b 100%);
+    border-bottom: 3px solid #b91c1c;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    color: #fff;
+  }
+  .tb-esq, .tb-dir, .tb-hora, .tb-acao { display: flex; align-items: center; gap: 12px; }
+  .topbar h1 {
+    margin: 0; font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-stretch: condensed;
+    font-weight: 700; font-size: 26px; letter-spacing: .02em;
+  }
+  .tb-cargo { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 18px; color: #9fb2c8; text-transform: uppercase; }
+  .topbar select {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 5px 10px; cursor: pointer;
+    background: #0d1f3d; color: #e2e8f0; border: 1px solid rgba(148,180,220,.4); border-radius: 8px; color-scheme: dark;
+  }
+  .tb-hora { gap: 8px; }
+  .tb-hora .lbl { font-size: 11px; color: #9fb2c8; text-transform: uppercase; letter-spacing: .04em; }
+  .tb-hora .hora { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tb-hora .st { font-size: 11px; color: #9fb2c8; max-width: 200px; }
+  .tb-hora .st.erro { color: #f87171; }
+  .tb-acao { flex-direction: column; align-items: stretch; gap: 4px; }
+  .tb-visao { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(148,180,220,.25); }
+  .tb-visao button {
+    background: transparent !important; color: #9fb2c8 !important; padding: 5px 10px !important;
+    font-size: 12px !important; border-radius: 7px !important; font-weight: 600;
+  }
+  .tb-visao button:hover { color: #fff !important; background: rgba(255,255,255,.08) !important; filter: none !important; }
+  .tb-visao button.on { background: #1e4f8a !important; color: #fff !important; box-shadow: inset 0 0 0 1px rgba(56,189,248,.5); }
+  .tb-visao .sep { width: 1px; height: 18px; background: rgba(148,180,220,.25); margin: 0 3px; }
+  .topbar button {
+    background: #b91c1c; color: #fff; border: 0; border-radius: 8px; padding: 7px 16px;
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .topbar button:hover { filter: brightness(1.15); }
+  .topbar button:disabled { opacity: .6; cursor: wait; }
+  .next { font-size: 10px; color: #9fb2c8; text-align: center; }
+  .nbar { height: 3px; background: rgba(255,255,255,.12); border-radius: 2px; margin-bottom: 3px; overflow: hidden; }
+  .nbar i { display: block; height: 100%; background: #22c55e; width: 0; transition: width .3s linear; }
+  main { max-width: 2400px; margin: 0 auto; padding: 24px 20px 64px; }
+  /* duas colunas em telas largas; empilha em telas menores */
+  .duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; margin-bottom: 24px; }
+  .duo > section { margin: 0 !important; min-width: 0; }
+  @media (max-width: 1280px) { .duo { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ----- modos de visualização: esconde blocos ----- */
+  .vis-cima .duo-baixo, .vis-baixo .duo-cima,
+  .vis-painel .duo-baixo, .vis-votos .duo-baixo, .vis-evolucao .duo-cima, .vis-estados .duo-cima,
+  .vis-painel #secVotos, .vis-votos #duelCard, .vis-evolucao #secUF, .vis-estados #secEvo { display: none !important; }
+  .vis-painel .duo, .vis-votos .duo, .vis-evolucao .duo, .vis-estados .duo { grid-template-columns: minmax(0, 1fr); }
+
+  /* ----- ajuste à altura da tela (telas largas): cada linha ocupa metade ou toda a altura útil ----- */
+  @media (min-width: 1281px) {
+    body.fit { --util: calc(100vh - var(--tb-h, 70px) - 40px); --linha: var(--util); }
+    body.fit.vis-todos { --linha: calc((var(--util) - 16px) / 2); }
+    body.fit main { padding-top: 20px; padding-bottom: 20px; display: flex; flex-direction: column; gap: 16px; }
+    body.fit .duo { height: var(--linha); gap: 16px; margin-bottom: 0; }
+    body.fit footer { display: none; }
+    body.fit .duo > section { height: 100%; overflow: auto; display: flex; flex-direction: column; }
+    body.fit .duo > section > * { flex: none; }
+    /* painel: mantém 16:9 e cabe na altura da linha */
+    body.fit #duelCard { overflow: hidden; justify-content: center; }
+    body.fit #duelCard .painel { width: min(100%, calc((var(--linha) - 2px) * 16 / 9)); margin: 0 auto; }
+    /* evolução: gráfico ocupa o espaço que sobra */
+    body.fit #secEvo { overflow: hidden; }
+    body.fit #secEvo .chartwrap { flex: 1 1 auto; min-height: 120px; }
+    body.fit #secEvo #chart { height: 100% !important; }
+    body.fit .state-table-wrap { overflow: visible; }
+  }
+  /* lado a lado: evolução mais alta e cartões por UF mais compactos para as colunas ficarem parecidas */
+  @media (min-width: 1281px) {
+    .duo #chart { height: 520px; }
+    .duo .ufgrid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
+    .duo .ufc { padding: 6px 8px 5px; }
+    .duo .ufc svg { height: 44px; }
+    .duo .ufc .d { display: none; }
+  }
+  @media (max-width: 760px) {
+    .topbar, .tb-dir { justify-content: center; }
+    .tb-hora .st { display: none; }
+  }
+
+  /* ==============================================================
+     PAINEL DA DISPUTA: FUNDO FIXO EM PNG (painel_fundo.png / painel_frente.png,
+     gerados por gerar_painel_png.py em 1600x900) + DADOS POR CIMA.
+     Posições em % do quadro 1600x900; fontes em cqw (1cqw = 16px do desenho).
+     ============================================================== */
+  .duel-card {
+    background: #07142b;
+    color: #fff;
+    border-radius: 18px;
+    margin-bottom: 28px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .painel {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    container-type: inline-size;
+    overflow: hidden;
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-stretch: semi-condensed;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .painel > * { position: absolute; }
+  .pn-camada { inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .pn-anel-votos .pz-fatia {
+    transform-box: view-box;
+    transform-origin: 800px 440px;
+    transition: stroke-dasharray .9s ease, transform .9s ease;
+  }
+  /* fotos circulares: centro (540,440) e (1060,440), raio 150 */
+  .pn-foto {
+    top: 32.222%; width: 18.75%; height: 33.333%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cor, #475569) 80%, #fff) 0%, var(--cor, #475569) 55%, color-mix(in srgb, var(--cor, #475569) 55%, #000) 100%);
+  }
+  .pn-foto img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; display: block; }
+  .pn-foto1 { left: 24.375%; }
+  .pn-foto2 { left: 56.875%; }
+
+  .pn-sombra { text-shadow: 0 .15cqw .4cqw rgba(0,0,0,.75), 0 0 .8cqw rgba(0,0,0,.5); }
+
+  /* cartões brancos: x 410-670 e 930-1190, y 600-805 */
+  .pn-card { width: 16.25%; text-align: center; color: #162447; white-space: nowrap; }
+  .pn-card.esq { left: 25.625%; }
+  .pn-card.dir { left: 58.125%; }
+  .pn-nome { top: 67.8%; font-size: 1.75cqw; text-transform: uppercase; letter-spacing: .02em; }
+  .pn-partido { display: inline-block; margin-top: .45cqw; padding: .25cqw .8cqw; border-radius: .4cqw; font-size: 1.3cqw; color: #fff; }
+  .pn-pct { top: 76.6%; font-size: 4.6cqw; font-variant-numeric: tabular-nums; }
+  .pn-pct small { font-size: .5em; margin-left: .05em; }
+  .pn-votos { top: 86%; font-size: 1.2cqw; color: #475569; font-weight: 600; }
+
+  .pn-diff {
+    left: 2.6%; top: 24.6%;
+    font-size: 1.35cqw; color: #e2e8f0; font-weight: 600;
+    background: rgba(8,20,42,.75); border: 1px solid rgba(148,180,220,.35);
+    padding: .45cqw 1cqw; border-radius: 2cqw; white-space: nowrap;
+  }
+  .pn-diff b { color: #facc15; }
+  .pn-status {
+    left: 2.6%; top: 67.5%; width: 22%;
+    font-size: 1.15cqw; font-weight: 600; line-height: 1.25; color: #e2e8f0;
+    padding: .4cqw .9cqw; border-radius: .6cqw; border: 1px solid rgba(148,180,220,.35); background: rgba(8,20,42,.8);
+  }
+  .pn-status b { font-size: 1.25cqw; letter-spacing: .03em; display: block; }
+  .pn-status.mat { border-color: #22c55e; background: rgba(21,128,61,.35); }
+  .pn-status.mat b { color: #4ade80; }
+  .pn-status.pra { border-color: #fbbf24; background: rgba(146,64,14,.35); }
+  .pn-status.pra b { color: #fbbf24; }
+  .pn-status.abe b { color: #9fb2c8; }
+
+  .pn-lat { right: 2.125%; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pn-lat-val { font-size: 2.1cqw; color: #fff; }
+  .pn-lat-sub { font-size: 1.1cqw; color: #9fb2c8; font-weight: 600; margin-top: .35cqw; }
+  .pn-votos-ap { top: 7.4%; }
+  .pn-secoes { top: 29.6%; }
+  .pn-compar { top: 40.9%; }
+  .pn-hora { top: 52.2%; }
+  .pn-anel-txt { left: 87.4%; width: 8.5%; top: 74.6%; text-align: center; font-size: 2cqw; }
+
+  .pn-graf .anel { transition: stroke-dasharray .9s ease; }
+  .pn-graf .seta { transition: opacity .4s ease; }
+  .pn-graf .seta.off { opacity: 0; }
+  .pn-graf .seta.up .forma-dn, .pn-graf .seta.dn .forma-up { display: none; }
+  .pn-graf .seta .seta-mov { animation: setaMov 1.6s ease-in-out infinite; }
+  .pn-graf .seta.dn .seta-mov { animation-name: setaMovDn; }
+  .pn-graf .seta text { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-weight: 700; font-size: 28px; paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 4px; }
+  @keyframes setaMov   { 0%,100% { transform: translate(0,0); } 50% { transform: translate(4px,-6px); } }
+  @keyframes setaMovDn { 0%,100% { transform: translate(0,0); } 50% { transform: translate(4px,6px); } }
+
+  .cand-trend-badge { font-size: 14px; font-weight: 700; }
+  .cand-trend-badge.up { color: #4ade80; }
+  .cand-trend-badge.dn { color: #f87171; }
+  .cand-trend-badge.eq { color: #94a3b8; }
+
+  /* Se houver mais candidatos (1º turno) */
+  .outros-cand-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px 16px;
+    font-size: 13px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .outros-cand-row .tag-outros { font-weight: 700; color: #94a3b8; margin-right: 4px; }
+  .outros-cand-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: #cbd5e1;
+  }
+  .outros-cand-pill b { color: #fff; }
+
+  /* ==============================================================
+     TABELA ÚNICA DE VOTOS POR ESTADO (COM 2 COLUNAS DE CANDIDATOS)
+     ============================================================== */
+  .table-section {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    padding: 22px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    margin-bottom: 28px;
+  }
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .table-toolbar-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .table-toolbar-title small {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--mut);
+  }
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .table-controls label {
+    font-size: 13px;
+    color: var(--mut);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .table-controls select {
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+  }
+  .btn-action {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #334155;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-action:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .state-table-wrap { overflow-x: auto; }
+  .state-tbl-thead {
+    display: grid;
+    grid-template-columns: minmax(170px, 230px) 1fr 1fr 140px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: 8px 8px 0 0;
+    font-weight: 700;
+    font-size: 13px;
+    color: #475569;
+    padding: 10px 14px;
+  }
+  .th-cand { display: flex; align-items: center; gap: 8px; }
+  .th-cand-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .reg-details { border: 1px solid var(--line); border-top: 0; background: #fff; }
+  .reg-details:last-child { border-radius: 0 0 8px 8px; }
+  .reg-summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: minmax(170px, 230px) 1fr 1fr 140px;
+    align-items: center;
+    padding: 11px 14px;
+    background: #f8fafc;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+    user-select: none;
+    transition: background .15s;
+    border-bottom: 1px solid transparent;
+  }
+  .reg-summary::-webkit-details-marker { display: none; }
+  .reg-summary:hover { background: #f1f5f9; }
+  .reg-details[open] > .reg-summary { border-bottom: 1px solid var(--line); background: #f1f5f9; }
+
+  .td-reg-name { display: flex; align-items: center; gap: 8px; }
+  .reg-arrow { display: inline-block; color: var(--mut); transition: transform .15s; font-size: 12px; }
+  .reg-details[open] .reg-arrow { transform: rotate(90deg); }
+
+  .td-cand-val { display: flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+  .td-cand-val .pct { font-size: 14px; font-weight: 700; }
+  .td-cand-val .vts { font-size: 12px; color: var(--mut); font-weight: 400; }
+  .td-cand-val.leader { color: #0f172a; }
+  .td-cand-val.leader .pct { color: var(--green); }
+
+  .td-comp-col { display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+  .mini-split-track { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; }
+  .mini-split-c1 { height: 100%; background: var(--c1-color); }
+  .mini-split-c2 { height: 100%; background: var(--c2-color); }
+  .mini-diff-lbl { font-size: 11px; font-weight: 700; color: var(--mut); font-variant-numeric: tabular-nums; }
+
+  .reg-rows { background: #fff; }
+  .uf-row {
+    display: grid;
+    grid-template-columns: minmax(170px, 230px) 1fr 1fr 140px;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    transition: background .12s;
+  }
+  .uf-row:last-child { border-bottom: 0; }
+  .uf-row:hover { background: #fafafa; }
+
+  .td-uf-title { display: flex; flex-direction: column; gap: 1px; }
+  .td-uf-main { display: flex; align-items: center; gap: 7px; }
+  .uf-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .uf-nome-txt { font-weight: 600; color: #1e293b; }
+  .uf-apur-sub { font-size: 11px; color: var(--mut); padding-left: 13px; font-variant-numeric: tabular-nums; }
+
+  .table-legend {
+    display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--mut);
+    margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
+  }
+  .table-legend span { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* EVOLUÇÃO TEMPORAL */
+  .evo {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px 14px;
+    margin-top: 24px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+  .evo .hd2 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .evo .hd2 .t { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .evo .hd2 .info { font-size: 12px; color: var(--mut); margin-right: auto; }
+  .evo .clr {
+    font: inherit; font-size: 12px; background: none; border: 1px solid #cbd5e1;
+    border-radius: 6px; padding: 4px 10px; color: var(--mut); cursor: pointer;
+  }
+  .evo .clr:hover { color: var(--red); border-color: var(--red); }
+  .fimlbl { font-size: 12px; color: var(--mut); display: flex; align-items: center; gap: 6px; }
+  .fimlbl input { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #cbd5e1; border-radius: 4px; color: #333; }
+  .leg { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .leg button {
+    font: inherit; font-size: 12px; display: flex; align-items: center; gap: 6px;
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 3px 10px; cursor: pointer; color: #333;
+  }
+  .leg button i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .leg button.off { opacity: .4; text-decoration: line-through; }
+  .chartwrap { position: relative; }
+  #chart, #chart2 { width: 100%; height: 300px; display: block; }
+  #chart2 { height: 220px; }
+  #chart text, #chart2 text { font: 11px system-ui, sans-serif; fill: #64748b; }
+  #chart .grid, #chart2 .grid { stroke: #f1f5f9; } #chart .axis, #chart2 .axis { stroke: #cbd5e1; }
+  #chart .endl, #chart2 .endl { font-weight: 700; font-size: 12px; }
+  .tip {
+    position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); padding: 10px 12px; font-size: 12px; display: none; min-width: 180px; z-index: 10;
+  }
+  .tip b { display: block; margin-bottom: 4px; font-size: 12px; color: #0f172a; }
+  .tip .r { display: flex; align-items: center; gap: 6px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .tip .r span:first-child { display: flex; align-items: center; gap: 6px; }
+  .tip .r i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .tip .m { color: var(--mut); margin-top: 5px; border-top: 1px solid #f1f5f9; padding-top: 5px; }
+
+  .ufgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+  .ufc { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px 6px; background: #fff; }
+  .ufc .h { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .ufc .h b { font-size: 14px; color: #0f172a; }
+  .ufc .h .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ufc .d { font-size: 11px; color: var(--mut); font-variant-numeric: tabular-nums; min-height: 14px; margin-top: 2px; }
+  .ufc .d .up { color: #16a34a; font-weight: 700; }
+  .ufc svg { width: 100%; height: 46px; display: block; margin-top: 3px; }
+  .ufc .bar0 { height: 3px; background: #f1f5f9; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .ufc .bar0 i { display: block; height: 100%; }
+  .ufc.done { background: #f8fafc; }
+
+  footer { font-size: 12px; color: #7f93ad; margin-top: 24px; text-align: center; }
+  .final .evo, .final .next, .final #btn { display: none; }
+  .badgeF { display: inline-block; font-size: 12px; background: #eef3fb; color: #2f6fb3; border-radius: 4px; padding: 2px 8px; margin-left: 4px; vertical-align: middle; }
+
+  /* ==============================================================
+     TEMA DO PAINEL (azul-marinho) PARA TABELA, GRÁFICOS E CARTÕES POR UF
+     ============================================================== */
+  .table-section, .evo {
+    --pn-bg: #07142b; --pn-linha: rgba(148,180,220,.18); --pn-txt: #e2e8f0; --pn-mut: #9fb2c8;
+    background: radial-gradient(circle at 50% 0%, #13294b 0%, #07142b 75%);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    color: var(--pn-txt);
+  }
+  .table-toolbar-title, .evo .hd2 .t {
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-stretch: semi-condensed; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .02em; color: #fff; font-size: 22px;
+    text-shadow: 0 2px 6px rgba(0,0,0,.5);
+  }
+  .table-toolbar-title small, .evo .hd2 .info, .table-controls label, .fimlbl,
+  .table-legend, .evo label { color: var(--pn-mut) !important; text-transform: none; letter-spacing: 0; text-shadow: none; }
+  .table-controls select, .fimlbl input, #ordUF {
+    background: #0d1f3d !important; color: var(--pn-txt) !important;
+    border: 1px solid rgba(148,180,220,.35) !important; color-scheme: dark;
+  }
+  .btn-action, .evo .clr, .leg button {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(148,180,220,.35); color: var(--pn-txt);
+  }
+  .btn-action:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .evo .clr:hover { color: #f87171; border-color: #f87171; }
+
+  .state-tbl-thead {
+    background: #0d1f3d; border-color: var(--pn-linha); color: var(--pn-mut);
+    font-family: "Bahnschrift", "Arial Narrow", sans-serif; text-transform: uppercase; letter-spacing: .03em;
+    align-items: center;
+  }
+  .th-cand { gap: 10px; }
+  .th-cand-foto {
+    width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none;
+    border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,230,120,.45);
+    background: var(--cor, #475569);
+  }
+  .th-cand-foto img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; display: block; }
+  .th-cand-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .th-cand-name { color: #fff; font-size: 14px; }
+  .th-cand-party { font-size: 11px; color: #fff; padding: 2px 7px; border-radius: 4px; letter-spacing: .02em; }
+  .th-cand-party:empty { display: none; }
+
+  .reg-details { background: transparent; border-color: var(--pn-linha); }
+  .reg-summary { background: rgba(255,255,255,.03); color: var(--pn-txt); }
+  .reg-summary:hover, .reg-details[open] > .reg-summary { background: rgba(255,255,255,.07); }
+  .reg-details[open] > .reg-summary { border-bottom-color: var(--pn-linha); }
+  .td-reg-name { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 15px; }
+  .reg-arrow, .reg-apur { color: var(--pn-mut); }
+  .reg-apur { font-weight: 400; margin-left: 4px; font-size: 12px; }
+  .reg-rows { background: rgba(0,0,0,.18); }
+  .uf-row { border-bottom-color: rgba(148,180,220,.08); }
+  .uf-row:hover { background: rgba(255,255,255,.04); }
+  .uf-nome-txt { color: var(--pn-txt); }
+  .uf-apur-sub, .td-cand-val .vts, .mini-diff-lbl { color: var(--pn-mut); }
+  .td-cand-val, .td-cand-val.leader { color: #fff; }
+  .td-cand-val .pct { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 16px; }
+  .td-cand-val.leader .pct { color: #4ade80; }
+  .mini-split-track { background: rgba(255,255,255,.1); height: 8px; border-radius: 4px; }
+  .table-legend { border-top-color: var(--pn-linha); }
+  .td-cand-val { flex-wrap: wrap; row-gap: 2px; }
+  .d1t { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.06); color: var(--pn-mut); white-space: nowrap; font-family: "Bahnschrift", "Arial Narrow", sans-serif; }
+  .d1t.up { color: #4ade80; } .d1t.dn { color: #f87171; }
+
+  .leg button.off { opacity: .35; }
+  #chart text, #chart2 text { fill: var(--pn-mut); }
+  #chart .grid, #chart2 .grid { stroke: rgba(148,180,220,.12); }
+  #chart .axis, #chart2 .axis { stroke: rgba(148,180,220,.35); }
+  #chart .endl, #chart2 .endl { paint-order: stroke; stroke: #07142b; stroke-width: 3px; }
+  .tip { background: #0d1f3d; border-color: rgba(148,180,220,.35); color: var(--pn-txt); box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .tip b { color: #fff; }
+  .tip .m { color: var(--pn-mut); border-top-color: var(--pn-linha); }
+
+  .ufc { background: rgba(255,255,255,.04); border-color: var(--pn-linha); border-radius: 10px; }
+  .ufc.done { background: rgba(74,222,128,.07); border-color: rgba(74,222,128,.3); }
+  .ufc .h b { color: #fff; font-family: "Bahnschrift", "Arial Narrow", sans-serif; }
+  .ufc .h .v { font-family: "Bahnschrift", "Arial Narrow", sans-serif; }
+  .ufc .d { color: var(--pn-mut); }
+  .ufc .d .up { color: #4ade80; }
+  .ufc .bar0 { background: rgba(255,255,255,.1); }
+  .ufc { cursor: pointer; transition: transform .15s, border-color .15s, background .15s; }
+  .ufc:hover { transform: translateY(-2px); border-color: rgba(56,189,248,.55); background: rgba(56,189,248,.07); }
+  .ufc .h .v { color: #38bdf8; }
+  .ufc svg { height: 56px; }
+  .ufc-cands { display: flex; justify-content: space-between; gap: 4px; margin-top: 5px; font-size: 11px; color: var(--pn-mut); white-space: nowrap; }
+  .ufc-cands span { display: flex; align-items: center; gap: 4px; }
+  .ufc-cands i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .ufc-cands b { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 12px; }
+  .leg button.area small { color: var(--pn-mut); font-size: 10px; }
+  .leg button i.traco { height: 3px; border-radius: 2px; }
+  .tip-proj { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tip-proj th { font-size: 10px; font-weight: 600; color: var(--pn-mut); text-align: right; padding: 0 0 3px 10px; line-height: 1.2; vertical-align: bottom; }
+  .tip-proj td { text-align: right; padding: 2px 0 2px 10px; white-space: nowrap; }
+  .tip-proj td:first-child { text-align: left; padding-left: 0; }
+  .tip-proj td i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .tip-proj td small { color: var(--pn-mut); }
+  #chart .projl { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .08em; fill: #fbbf24; opacity: .8; }
+
+  .uf-modal { position: fixed; inset: 0; z-index: 100; background: rgba(2,8,20,.72); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .uf-modal[hidden] { display: none; }
+  .uf-modal-box { position: relative; width: min(1100px, 100%); max-height: calc(100vh - 32px); overflow: auto;
+    background: radial-gradient(circle at 50% 0%, #13294b 0%, #07142b 75%); color: #e2e8f0;
+    border: 1px solid rgba(255,255,255,.14); border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.6); padding: 20px 22px 16px; }
+  .uf-modal-x { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid rgba(148,180,220,.35); background: rgba(255,255,255,.06); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+  .uf-modal-x:hover { background: rgba(255,255,255,.14); }
+  .uf-modal-hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding-right: 40px; }
+  .uf-modal-hd .t { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-weight: 700; font-size: 24px; text-transform: uppercase; color: #fff; }
+  .uf-modal-hd .info { font-size: 12px; color: #9fb2c8; }
+  .uf-modal-kpis { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .uf-modal-kpis .k { flex: 1 1 180px; background: rgba(255,255,255,.05); border: 1px solid rgba(148,180,220,.2); border-radius: 10px; padding: 10px 12px; }
+  .uf-modal-kpis .k span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9fb2c8; text-transform: uppercase; }
+  .uf-modal-kpis .k i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .uf-modal-kpis .k b { display: block; font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 30px; margin-top: 4px; }
+  .uf-modal-kpis .k small { font-size: 12px; color: #9fb2c8; }
+  #ufModalChart { width: 100%; height: 380px; display: block; }
+  #ufModalChart text { font: 11px system-ui, sans-serif; fill: #9fb2c8; }
+  #ufModalChart .grid { stroke: rgba(148,180,220,.12); }
+  #ufModalChart .axis { stroke: rgba(148,180,220,.35); }
+  #ufModalChart .endl { font-weight: 700; font-size: 12px; paint-order: stroke; stroke: #07142b; stroke-width: 3px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="tb-esq">
+    <h1 id="tit">ELEIÇÕES 2026</h1>
+    <span class="tb-cargo">Presidente</span>
+    <select id="selEle" title="Escolha a eleição">
+      <option value="2026-2" selected>2026 · 2º turno</option>
+      <option value="2026-1">2026 · 1º turno</option>
+      <option value="2022-1">2022 · 1º turno</option>
+      <option value="2022-2">2022 · 2º turno</option>
+    </select>
+  </div>
+  <div class="tb-visao" role="group" aria-label="Visualização" id="tbVisao">
+    <button data-v="todos" title="Os 4 blocos na mesma tela">▦ 4</button>
+    <button data-v="cima" title="Painel e votos por estado">Cima</button>
+    <button data-v="baixo" title="Evolução e apuração por estado">Baixo</button>
+    <span class="sep"></span>
+    <button data-v="painel">Painel</button>
+    <button data-v="votos">Votos</button>
+    <button data-v="evolucao">Evolução</button>
+    <button data-v="estados">Estados</button>
+    <span class="sep"></span>
+    <button data-v="rolar" title="Layout com rolagem, sem ajustar à altura da tela">Rolar</button>
+  </div>
+  <div class="tb-dir updbox">
+    <div class="tb-hora">
+      <span class="lbl">Última atualização</span>
+      <span class="hora" id="hora">–</span>
+      <span class="st" id="st">carregando…</span>
+    </div>
+    <div class="tb-acao">
+      <button id="btn">⟳ Atualizar agora</button>
+      <div class="next"><div class="nbar"><i id="nfill"></i></div><span id="cd">próxima em 30s</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- LINHA 1: PAINEL | VOTOS POR ESTADO (lado a lado em telas largas) -->
+  <div class="duo duo-cima">
+  <!-- PAINEL DA DISPUTA: FUNDO FIXO EM PNG + GRÁFICO, SETAS E CONTADORES DINÂMICOS -->
+  <section class="duel-card" id="duelCard">
+    <div class="painel">
+      <img class="pn-camada" src="painel_fundo.png" alt="">
+
+      <!-- Anel de votos: amarelo = candidato da esquerda, verde = candidato da direita -->
+      <svg class="pn-camada pn-anel-votos" viewBox="0 0 1600 900">
+        <defs>
+          <linearGradient id="pzVerde" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#34d673" /><stop offset="1" stop-color="#067a32" />
+          </linearGradient>
+          <linearGradient id="pzAmarelo" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffe75a" /><stop offset="1" stop-color="#d9a400" />
+          </linearGradient>
+        </defs>
+        <circle cx="800" cy="440" r="150" fill="none" stroke="url(#pzVerde)" stroke-width="40" />
+        <circle class="pz-fatia" id="pzFatia" cx="800" cy="440" r="150" fill="none" stroke="url(#pzAmarelo)"
+                stroke-width="40" stroke-dasharray="471.24 942.48" style="transform:rotate(90deg)" />
+      </svg>
+
+      <div class="pn-foto pn-foto1" id="pnFoto1"><img id="c1Img" alt=""></div>
+      <div class="pn-foto pn-foto2" id="pnFoto2"><img id="c2Img" alt=""></div>
+
+      <img class="pn-camada" src="painel_frente.png" alt="">
+
+      <!-- Setas de tendência e anel de seções apuradas -->
+      <svg class="pn-camada pn-graf" viewBox="0 0 1600 900">
+        <defs>
+          <filter id="setaBrilho" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity=".55" />
+          </filter>
+          <linearGradient id="setaVerde" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#15803d" /><stop offset="1" stop-color="#86efac" />
+          </linearGradient>
+          <linearGradient id="setaVermelha" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#991b1b" /><stop offset="1" stop-color="#f87171" />
+          </linearGradient>
+        </defs>
+        <circle id="pnAnel" class="anel" cx="1467" cy="690" r="70" fill="none" stroke="#4ade80" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="0 439.82" transform="rotate(-90 1467 690)" />
+        <!-- seta da esquerda espelhada para apontar para fora do painel -->
+        <g id="seta1" class="seta off" transform="translate(372 300) scale(-1 1)">
+          <g class="seta-mov" filter="url(#setaBrilho)">
+            <path class="forma-up" d="M0,106 C44,106 76,90 89.5,51 L73.5,45.5 L114,9 L122.5,62.5 L106.5,57 C90,104 50,124 0,124 Z" fill="url(#setaVerde)" stroke="rgba(255,255,255,.6)" stroke-width="2" />
+            <path class="forma-dn" d="M0,24 C44,24 76,40 89.5,79 L73.5,84.5 L114,121 L122.5,67.5 L106.5,73 C90,26 50,6 0,6 Z" fill="url(#setaVermelha)" stroke="rgba(255,255,255,.6)" stroke-width="2" />
+          </g>
+          <text id="seta1Txt" x="-62" y="160" text-anchor="middle" fill="currentColor" transform="scale(-1 1)"></text>
+        </g>
+        <g id="seta2" class="seta off" transform="translate(1228 300)">
+          <g class="seta-mov" filter="url(#setaBrilho)">
+            <path class="forma-up" d="M0,106 C44,106 76,90 89.5,51 L73.5,45.5 L114,9 L122.5,62.5 L106.5,57 C90,104 50,124 0,124 Z" fill="url(#setaVerde)" stroke="rgba(255,255,255,.6)" stroke-width="2" />
+            <path class="forma-dn" d="M0,24 C44,24 76,40 89.5,79 L73.5,84.5 L114,121 L122.5,67.5 L106.5,73 C90,26 50,6 0,6 Z" fill="url(#setaVermelha)" stroke="rgba(255,255,255,.6)" stroke-width="2" />
+          </g>
+          <text id="seta2Txt" x="52" y="160" text-anchor="middle" fill="currentColor"></text>
+        </g>
+      </svg>
+
+      <div class="pn-diff" id="duelDiffBadge">Aguardando dados…</div>
+      <div class="pn-status" id="pnStatus" hidden></div>
+
+      <div class="pn-card esq pn-nome" id="c1Name">–</div>
+      <div class="pn-card esq pn-pct" id="c1Pct">–<small>%</small></div>
+      <div class="pn-card esq pn-votos" id="c1Votes">– votos</div>
+
+      <div class="pn-card dir pn-nome" id="c2Name">–</div>
+      <div class="pn-card dir pn-pct" id="c2Pct">–<small>%</small></div>
+      <div class="pn-card dir pn-votos" id="c2Votes">– votos</div>
+
+      <div class="pn-lat pn-votos-ap pn-sombra"><div class="pn-lat-val" id="pnVotosAp">–</div><div class="pn-lat-sub" id="pnVotosApSub"></div></div>
+      <div class="pn-lat pn-secoes pn-sombra"><div class="pn-lat-val" id="pnSecoes">–</div><div class="pn-lat-sub" id="pnSecoesSub"></div></div>
+      <div class="pn-lat pn-compar pn-sombra"><div class="pn-lat-val" id="pnCompar">–</div><div class="pn-lat-sub" id="pnComparSub"></div></div>
+      <div class="pn-lat pn-hora pn-sombra"><div class="pn-lat-val" id="pnHora">–</div></div>
+      <div class="pn-anel-txt pn-sombra" id="pnAnelTxt">–</div>
+    </div>
+
+    <!-- Se houver mais candidatos (ex: 1º turno) -->
+    <div class="outros-cand-row" id="outrosCandsRow" style="display:none"></div>
+  </section>
+
+  <!-- TABELA ÚNICA DE VOTOS POR ESTADO (2 COLUNAS DE CANDIDATOS) -->
+  <section class="table-section" id="secVotos">
+    <div class="table-toolbar">
+      <div class="table-toolbar-title">
+        Votos por estado
+        <small>Tabela unificada com os 2 principais candidatos lado a lado</small>
+      </div>
+      <div class="table-controls">
+        <label>Ordenar UFs
+          <select id="ord">
+            <option value="padrao">Padrão por região</option>
+            <option value="c1">Maior % Candidato 1</option>
+            <option value="c2">Maior % Candidato 2</option>
+            <option value="apur">Mais apurados primeiro</option>
+            <option value="alf">Ordem alfabética</option>
+          </select>
+        </label>
+        <button class="btn-action" id="btnToggleAll">Expandir todas</button>
+      </div>
+    </div>
+
+    <div class="state-table-wrap">
+      <div class="state-tbl-thead">
+        <div>Estado / Região</div>
+        <div class="th-cand" id="thCand1">
+          <span class="th-cand-foto"><img id="thCand1Img" alt=""></span>
+          <span class="th-cand-txt"><span class="th-cand-name" id="thCand1Name">Candidato 1</span><span class="th-cand-party" id="thCand1Party"></span></span>
+        </div>
+        <div class="th-cand" id="thCand2">
+          <span class="th-cand-foto"><img id="thCand2Img" alt=""></span>
+          <span class="th-cand-txt"><span class="th-cand-name" id="thCand2Name">Candidato 2</span><span class="th-cand-party" id="thCand2Party"></span></span>
+        </div>
+        <div>Vantagem no Estado</div>
+      </div>
+
+      <!-- CORPO DA TABELA COM REGIÕES E UFS RECOLHIDAS POR PADRÃO -->
+      <div id="stateTableBody"></div>
+    </div>
+
+    <div class="table-legend">
+      <span><i class="legend-dot" style="background:#4ade80"></i> Candidato lidera no estado / região</span>
+      <span>"% apur." = seções totalizadas na UF</span>
+      <span><b style="color:#4ade80">▲</b>/<b style="color:#f87171">▼</b> = variação de pontos percentuais desde a última leitura</span>
+      <span><b class="d1t">1ºT</b> = % no 1º turno (só entre os 2) e diferença para agora</span>
+    </div>
+  </section>
+  </div>
+
+
+  <!-- LINHA 2: EVOLUÇÃO | APURAÇÃO POR ESTADO (lado a lado em telas largas) -->
+  <div class="duo duo-baixo">
+  <!-- GRÁFICOS DE EVOLUÇÃO TEMPORAL -->
+  <section class="evo" id="secEvo">
+    <div class="hd2">
+      <span class="t">Evolução</span>
+      <span class="info" id="evoInfo">um ponto a cada 5 minutos</span>
+      <label class="fimlbl" title="Pontos antes deste horário não são gravados nem desenhados">Início
+        <input type="datetime-local" id="ini"></label>
+      <label class="fimlbl" title="Pontos depois deste horário não são gravados nem desenhados">Fim
+        <input type="datetime-local" id="fim"></label>
+      <button class="clr" id="clr" title="Apaga a série salva neste navegador">Limpar histórico</button>
+    </div>
+    <div class="leg" id="leg"></div>
+    <div class="chartwrap"><svg id="chart"></svg><div class="tip" id="tip"></div></div>
+  </section>
+
+
+  <section class="evo" id="secUF">
+    <div class="hd2">
+      <span class="t">Apuração por estado</span>
+      <span class="info">área = % de seções apuradas · linhas = % de cada candidato · clique num estado para ampliar</span>
+      <label style="font-size:12px;color:var(--mut)">Ordenar <select id="ordUF" style="font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:4px;background:#fff">
+        <option value="menos">menos apurados primeiro</option>
+        <option value="mais">mais apurados primeiro</option>
+        <option value="ritmo">maior ritmo (últimos 5 min)</option>
+        <option value="reg">por região</option>
+      </select></label>
+    </div>
+    <div class="ufgrid" id="ufgrid"></div>
+  </section>
+  </div>
+
+  <!-- MODAL: GRÁFICO AMPLIADO DE UMA UF -->
+  <div class="uf-modal" id="ufModal" hidden>
+    <div class="uf-modal-box" role="dialog" aria-modal="true" aria-labelledby="ufModalTit">
+      <button class="uf-modal-x" aria-label="Fechar">×</button>
+      <div class="uf-modal-hd"><span class="t" id="ufModalTit">–</span>
+        <span class="info">área = % de seções apuradas · linhas = % de votos válidos de cada candidato</span></div>
+      <div class="uf-modal-kpis" id="ufModalKpis"></div>
+      <div class="chartwrap"><svg id="ufModalChart"></svg><div class="tip" id="ufModalTip"></div></div>
+    </div>
+  </div>
+
+  <footer id="rod">Fonte: Tribunal Superior Eleitoral (resultados.tse.jus.br)</footer>
+</main>
+
+<script>
+// Eleições disponíveis (códigos do TSE). Eleições encerradas: resultado final, sem atualização automática.
+const ELEICOES = {
+  "2026-2": { ano: 2026, turno: 2, cod: "6258", final: false, inicio: "2026-10-25T17:00", fim: "2026-10-25T23:59" },
+  "2026-1": { ano: 2026, turno: 1, cod: "6257", final: false, inicio: "2026-10-04T17:00", fim: "2026-10-04T23:59" },
+  "2022-1": { ano: 2022, turno: 1, cod: "544",  final: true, estatico: true },
+  "2022-2": { ano: 2022, turno: 2, cod: "545",  final: true, estatico: true },
+};
+const SEL = (() => { try { const v = localStorage.getItem("apuracao_eleicao_sel"); return ELEICOES[v] ? v : "2026-2"; } catch (e) { return "2026-2"; } })();
+const CFG = ELEICOES[SEL];
+const ELEICAO = CFG.cod;
+const ROOT = `https://resultados.tse.jus.br/oficial/ele${CFG.ano}/${ELEICAO}`;
+const E6 = ELEICAO.padStart(6, "0");
+
+const URLS = uf => CFG.ano >= 2024
+  ? [`${ROOT}/dados/${uf}/${uf}-c0001-e${E6}-u.json`, `${ROOT}/dados-simplificados/${uf}/${uf}-c0001-e${E6}-r.json`]
+  : [`${ROOT}/dados-simplificados/${uf}/${uf}-c0001-e${E6}-r.json`, `${ROOT}/dados/${uf}/${uf}-c0001-e${E6}-u.json`];
+
+const NUM_PARTIDO = { 10:"REPUBLICANOS", 11:"PP", 12:"PDT", 13:"PT", 14:"PTB", 15:"MDB", 16:"PSTU", 20:"PODE", 21:"PCB", 22:"PL", 23:"CIDADANIA",
+  27:"DC", 28:"PRTB", 29:"PCO", 30:"NOVO", 33:"MOBILIZA", 35:"PMB", 36:"AGIR", 40:"PSB", 43:"PV", 44:"UNIÃO", 45:"PSDB", 50:"PSOL",
+  55:"PSD", 65:"PC do B", 70:"AVANTE", 77:"SOLIDARIEDADE", 80:"UP", 90:"PROS" };
+
+const REGIOES = [
+  ["Sudeste", ["sp","mg","rj","es"]],
+  ["Nordeste", ["ba","pe","ce","ma","pb","rn","al","pi","se"]],
+  ["Sul", ["pr","rs","sc"]],
+  ["Norte", ["pa","am","ro","to","ac","ap","rr"]],
+  ["Centro-Oeste", ["go","df","mt","ms"]],
+  ["Exterior", ["zz"]],
+];
+const UFS = REGIOES.flatMap(r => r[1]);
+const NOME_UF = {
+  ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará", df: "Distrito Federal",
+  es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso", ms: "Mato Grosso do Sul", mg: "Minas Gerais",
+  pa: "Pará", pb: "Paraíba", pr: "Paraná", pe: "Pernambuco", pi: "Piauí", rj: "Rio de Janeiro", rn: "Rio Grande do Norte",
+  rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima", sc: "Santa Catarina", sp: "São Paulo", se: "Sergipe",
+  to: "Tocantins", zz: "Exterior"
+};
+const COR = { PL:"#3b5bdb", PT:"#e5222f", AVANTE:"#3e7f86", PSD:"#a5a000", "MISSÃO":"#e0952b", MISSAO:"#e0952b",
+  NOVO:"#f26b21", PSDB:"#1f5fa8", PSOL:"#a0007a", PDT:"#d8262e", MDB:"#2a8a3e", "UNIÃO":"#0b3d91", PSB:"#e6a800",
+  REPUBLICANOS:"#1b5ea8", PRTB:"#1b7a3a", DC:"#3170b7", PCO:"#8b0000", PSTU:"#b10000", UP:"#e2001a", PCB:"#cc0000" };
+const cor = p => COR[(p || "").toUpperCase()] || "#475569";
+
+const num = s => { if (s == null) return null; if (typeof s === "number") return s; const v = parseFloat(String(s).replace(/\./g, "").replace(",", ".")); return isNaN(v) ? null : v; };
+const fV = n => n == null || isNaN(n) ? "–" : Math.round(n).toLocaleString("pt-BR");
+const fP = n => n == null || isNaN(n) ? "–" : n.toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+const ALIAS = {
+  s:   ["s","ts","tse","qts"],
+  st:  ["st","sa","sta","qst"],
+  pst: ["pst","psa"],
+  e:   ["e","te","tel","qe"],
+  ea:  ["ea","tea"],
+  pea: ["pea","ptea"],
+  c:   ["c","tc","qc","comp"],
+  vv:  ["vv","tvv","qvv"],
+};
+function extrair(json) {
+  const cands = new Map(), raw = {};
+  (function walk(o, sigla) {
+    if (Array.isArray(o)) { o.forEach(x => walk(x, sigla)); return; }
+    if (!o || typeof o !== "object") return;
+    for (const k in o) if (raw[k] == null && (typeof o[k] === "string" || typeof o[k] === "number")) raw[k] = o[k];
+    const sg = o.sg || o.sgp || sigla;
+    const nome = o.nmu || o.nm;
+    if (o.vap != null && nome && (o.n != null || o.sqcand != null)) {
+      const key = String(o.n ?? o.sqcand);
+      cands.set(key, { key, n: o.n ?? "", sq: o.sqcand, nome, partido: (o.cc && o.cc.length <= 14 && !/[\/(]/.test(o.cc)) ? o.cc : (NUM_PARTIDO[o.n] || sg || o.cc || ""), v: num(o.vap) || 0, p: num(o.pvap) || 0 });
+    }
+    for (const k in o) if (o[k] && typeof o[k] === "object") walk(o[k], sg);
+  })(json, null);
+  const tot = {};
+  for (const [k, al] of Object.entries(ALIAS)) for (const a of al) if (raw[a] != null && num(raw[a]) != null) { tot[k] = num(raw[a]); break; }
+  const somaV = [...cands.values()].reduce((s, c) => s + c.v, 0);
+  if (tot.pst == null && tot.s) tot.pst = tot.st / tot.s * 100;
+  if (tot.s && tot.pst != null && (tot.st == null || Math.abs(tot.st / tot.s * 100 - tot.pst) > 1)) tot.st = Math.round(tot.s * tot.pst / 100);
+  return { cands, tot, somaV, raw };
+}
+
+// 2022 Embutido oficial
+const D22 = {"ac":[121566,287750,129022,275582,20122,12314,3877],"al":[976831,687827,974156,621515,67411,43542,17593],"ap":[189918,200547,197382,187621,27497,14670,4991],"am":[1004991,961741,1019684,880198,87060,44527,25207],"ba":[6097815,2357028,5873081,2047599,197305,217224,87799],"ce":[3807891,1634477,3578355,1377827,66214,369222,37646],"es":[926767,1282145,897348,1160030,85325,56221,22206],"df":[729295,1041331,649534,910397,105377,74308,22959],"go":[1542115,2193041,1454723,1920203,170742,90695,45106],"ma":[2668425,1082749,2603454,983861,78254,96095,19981],"mt":[652786,1216730,633748,1102866,55989,29437,20848],"ms":[599547,880606,588323,794206,79719,29314,15427],"mg":[6190960,6141310,5802571,5239264,500658,310324,163816],"pa":[2509084,2073895,2443730,1884673,204075,116057,31401],"pb":[1601953,802502,1554868,717416,57154,76225,16025],"pr":[2506605,4159343,2363492,3628612,309685,180599,84376],"pe":[3640933,1798832,3558322,1630938,96570,130015,36164],"pi":[1551383,467065,1518008,406897,42179,59321,17981],"rj":[4156217,5403894,3847143,4831246,365969,301489,110830],"rn":[1326785,711381,1264179,622731,38633,71740,9981],"rs":[2891851,3733185,2806672,3245023,317957,190945,77155],"ro":[262904,633236,261749,581306,31217,19353,9610],"rr":[67128,213518,68760,207587,12956,6709,2357],"sc":[1351918,3047630,1279216,2694406,191310,88672,77380],"sp":[11519882,14216587,10490032,12239989,1625596,898540,402177],"se":[862951,421086,828716,378610,42073,40247,8786],"to":[434593,411654,434303,379194,25209,18141,4945],"zz":[152905,145264,138933,122548,13167,13341,6536]};
+const NAC22 = {
+  1: { nulos: 3487874, brancos: 1964779, e: 156453354, cands: [
+    [13, "LULA", "PT", 57259504], [22, "JAIR BOLSONARO", "PL", 51072345], [15, "SIMONE TEBET", "MDB", 4915423],
+    [12, "CIRO GOMES", "PDT", 3599287], [44, "SORAYA THRONICKE", "UNIÃO", 600955], [30, "FELIPE D'AVILA", "NOVO", 559708],
+    [14, "PADRE KELMON", "PTB", 81129], [80, "LÉO PÉRICLES", "UP", 53519], [21, "SOFIA MANZANO", "PCB", 45620],
+    [16, "VERA", "PSTU", 25625], [27, "CONSTITUINTE EYMAEL", "DC", 16604]] },
+  2: { nulos: 3930765, brancos: 1769678, e: 156453354 },
+};
+function dados22(uf) {
+  const t = CFG.turno;
+  let lista;
+  if (uf === "br") {
+    lista = t === 1 ? NAC22[1].cands
+      : [[13, "LULA", "PT", Object.values(D22).reduce((s, a) => s + a[0], 0)], [22, "JAIR BOLSONARO", "PL", Object.values(D22).reduce((s, a) => s + a[1], 0)]];
+  } else {
+    const a = D22[uf]; if (!a) throw new Error("sem dados de 2022");
+    lista = t === 2 ? [[13, "LULA", "PT", a[0]], [22, "JAIR BOLSONARO", "PL", a[1]]]
+      : [[13, "LULA", "PT", a[2]], [22, "JAIR BOLSONARO", "PL", a[3]], [15, "SIMONE TEBET", "MDB", a[4]], [12, "CIRO GOMES", "PDT", a[5]], ["", "DEMAIS CANDIDATOS (7)", "", a[6]]];
+  }
+  const somaV = lista.reduce((s, x) => s + x[3], 0);
+  const cands = new Map();
+  lista.forEach(([n, nome, partido, v]) => { const key = n === "" ? "dem22" : String(n);
+    cands.set(key, { key, n: n === "" ? "" : String(n), nome, partido, v, p: somaV ? v / somaV * 100 : 0 }); });
+  const tot = { pst: 100 };
+  if (uf === "br") { const N = NAC22[t]; tot.vv = somaV; tot.c = somaV + N.nulos + N.brancos; tot.e = N.e; }
+  return { cands, tot, somaV, raw: {} };
+}
+
+async function buscar(uf) {
+  if (CFG.estatico) return dados22(uf);
+  let erro = "";
+  for (const u of URLS(uf)) {
+    try { const r = await fetch(u, { cache: CFG.final ? "default" : "no-store" });
+      if (r.ok) return extrair(await r.json()); erro = "HTTP " + r.status; }
+    catch (e) { erro = e.message; }
+  }
+  throw new Error(erro);
+}
+
+let D = null;
+const LS = `apuracao${CFG.ano}_${ELEICAO}`;
+const BUCKET = 5 * 60 * 1000;
+const lsGet = (k, d) => { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) {} };
+let SERIE = lsGet("_serie", []);
+const FIM_PADRAO = CFG.fim || "2099-12-31T23:59";
+let FIM_STR = lsGet("_fim", FIM_PADRAO);
+const fimTs = () => new Date(FIM_STR).getTime();
+// Início do gráfico: fechamento das urnas (17h de Brasília); pontos antes disso não são gravados nem desenhados
+const INI_PADRAO = CFG.inicio || "2000-01-01T00:00";
+let INI_STR = lsGet("_ini", INI_PADRAO);
+const iniTs = () => new Date(INI_STR).getTime();
+
+function serieVis() {
+  const out = [], lim = fimTs(), ini = iniTs();
+  for (const pt of SERIE) {
+    if (pt.t < ini) continue;
+    if (pt.t > lim) break;
+    out.push(pt);
+    if (pt.pst != null && pt.pst >= 99.995) break;
+  }
+  return out;
+}
+const OCULTOS = new Set(lsGet("_ocultos", []));
+const HIST = new Map(Object.entries(lsGet("_hist", {})));
+let novoDado = false;
+
+function tend(key, p) {
+  if (p == null || isNaN(p)) return `<span class="cand-trend-badge eq"></span>`;
+  let h = HIST.get(key);
+  if (!h) { h = { prev: null, cur: p }; HIST.set(key, h); }
+  else if (novoDado && Math.abs(p - h.cur) > 1e-9) { h.prev = h.cur; h.cur = p; }
+  if (h.prev == null) return `<span class="cand-trend-badge eq">–</span>`;
+  const d = h.cur - h.prev;
+  if (Math.abs(d) < 0.005) return `<span class="cand-trend-badge eq">=</span>`;
+  const txt = Math.abs(d).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  return d > 0 ? `<span class="cand-trend-badge up" title="+${txt} p.p.">▲${txt}</span>` : `<span class="cand-trend-badge dn" title="-${txt} p.p.">▼${txt}</span>`;
+}
+
+// Conjunto de regiões abertas: POR PADRÃO TODAS RECOLHIDAS
+const abertos = new Set();
+
+const INTERVALO = 30;
+let restante = INTERVALO, rodando = false;
+
+async function atualizar() {
+  if (rodando) return;
+  rodando = true;
+  const btn = document.getElementById("btn"), st = document.getElementById("st");
+  btn.disabled = true; btn.textContent = "Atualizando…";
+  try { await atualizarDados(); }
+  catch (e) { st.textContent = "erro: " + e.message; st.className = "st erro"; }
+  btn.disabled = false; btn.textContent = CFG.final ? "⟳ Recarregar dados" : "⟳ Atualizar agora";
+  restante = INTERVALO; rodando = false;
+}
+
+setInterval(() => {
+  if (rodando || CFG.final) return;
+  restante--;
+  document.getElementById("cd").textContent = `próxima atualização em ${restante}s`;
+  document.getElementById("nfill").style.width = ((INTERVALO - restante) / INTERVALO * 100) + "%";
+  if (restante <= 0) atualizar();
+}, 1000);
+
+async function atualizarDados() {
+  const alvos = ["br", ...UFS];
+  const res = await Promise.allSettled(alvos.map(buscar));
+  D = {}; res.forEach((r, i) => D[alvos[i]] = r.status === "fulfilled" ? r.value : { erro: r.reason.message });
+  novoDado = true;
+  try { render(); } finally { novoDado = false; }
+  if (!REF1T && CFG.turno === 2) carregarRef1T().then(() => REF1T && render());
+  lsSet("_hist", Object.fromEntries(HIST));
+  const falhas = res.filter(r => r.status !== "fulfilled").length;
+  document.getElementById("hora").textContent = new Date().toLocaleTimeString("pt-BR");
+  const st = document.getElementById("st");
+  st.textContent = CFG.estatico ? "resultado oficial final do TSE (dados embutidos na página)"
+    : falhas ? `${alvos.length - falhas} de ${alvos.length} arquivos lidos · ${falhas} falharam` : `${alvos.length} arquivos lidos do TSE`;
+  st.className = falhas ? "st erro" : "st";
+}
+
+let TOP2 = [];
+
+function render() {
+  const base = D.br && D.br.cands ? D.br : null;
+  const total = new Map();
+  (base ? [base] : Object.values(D).filter(d => d.cands)).forEach(d => d.cands.forEach(c => {
+    const t = total.get(c.key) || { ...c, v: 0 }; t.v += c.v; total.set(c.key, t);
+  }));
+  const todos = [...total.values()].sort((a, b) => b.v - a.v);
+  const somaV = todos.reduce((s, c) => s + c.v, 0);
+  if (!base) todos.forEach(c => c.p = somaV ? c.v / somaV * 100 : 0);
+
+  const top = todos.slice(0, 2);
+  const resto = todos.slice(2);
+  TOP2 = top;
+
+  // Totais (exibidos na lateral do painel)
+  const t = base ? base.tot : {};
+  const votos = t.c ?? somaV;
+  const pctE = t.pea ?? (t.e ? (t.ea ?? votos) / t.e * 100 : null);
+
+  // Série temporal
+  const congelado = (() => { const v = serieVis(); return v.length && v[v.length - 1].pst >= 99.995 && v[v.length - 1].t < Math.floor(Date.now() / BUCKET) * BUCKET; })();
+  if (novoDado && base && Date.now() >= iniTs() && Date.now() <= fimTs() && !congelado) {
+    const bucket = Math.floor(Date.now() / BUCKET) * BUCKET;
+    const pt = { t: bucket, at: Date.now(), pst: t.pst, pe: pctE, vt: votos,
+      uf: Object.fromEntries(UFS.map(u => [u, D[u] && D[u].tot ? (D[u].tot.pst ?? null) : null])),
+      // % dos 2 principais em cada UF (só onde já há votos) para os gráficos por estado
+      ufc: Object.fromEntries(UFS.map(u => [u, Object.fromEntries(top.map(c => {
+        const x = D[u] && D[u].cands && D[u].cands.get ? D[u].cands.get(c.key) : null;
+        return [c.key, x && x.v > 0 ? Math.round(x.p * 100) / 100 : null];
+      }))])), c: Object.fromEntries(todos.map(c => [c.key, { nome: c.nome, partido: c.partido, p: c.p, v: c.v }])) };
+    if (SERIE.length && SERIE[SERIE.length - 1].t === bucket) SERIE[SERIE.length - 1] = pt; else SERIE.push(pt);
+    lsSet("_serie", SERIE);
+  }
+  GRAF = { top, topKeys: new Set(top.map(c => c.key)) };
+  desenhar();
+
+  // RENDER HERO DUEL (CANDIDATOS ENCAIXADOS NO MAPA)
+  renderDuel(top, resto, somaV);
+  renderStatus(top);
+
+  // RENDER TABELA ÚNICA DE ESTADOS COM 2 COLUNAS
+  renderTabelaEstados(top.length > 1 ? ladosPainel(top) : top);
+}
+
+// Fotos recortadas em PNG usadas no painel
+const FOTOS_RECORTE = {
+  "22": "candidato_flavio.png",
+  "13": "candidato_lula.png"
+};
+
+// Contador animado: vai do último valor exibido até o novo
+function animarNum(el, alvo, fmt) {
+  if (!el) return;
+  if (alvo == null || isNaN(alvo)) { el.innerHTML = fmt(null); el._v = null; return; }
+  const ini = el._v == null ? 0 : el._v, t0 = performance.now(), dur = 900;
+  el._v = alvo;
+  cancelAnimationFrame(el._raf);
+  // aba em segundo plano não roda requestAnimationFrame: mostra o valor final direto
+  if (document.hidden) { el.innerHTML = fmt(alvo); return; }
+  const passo = agora => {
+    const k = Math.min(1, (agora - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.innerHTML = fmt(ini + (alvo - ini) * e);
+    if (k < 1) el._raf = requestAnimationFrame(passo);
+  };
+  el._raf = requestAnimationFrame(passo);
+}
+const fmtPct = v => `${fP(v)}<small>%</small>`;
+const fmtVotos = v => `${fV(v)} votos`;
+
+// Seta de tendência: usa a variação desde a última atualização (HIST); sem histórico, só o líder ganha seta verde
+function setaTend(id, key, lider) {
+  const g = document.getElementById(id), txt = document.getElementById(id + "Txt");
+  const h = HIST.get(key);
+  const d = h && h.prev != null ? h.cur - h.prev : null;
+  let dir = null, rot = "";
+  if (d != null && Math.abs(d) >= 0.005) {
+    dir = d > 0 ? "up" : "dn";
+    rot = (d > 0 ? "+" : "−") + Math.abs(d).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  } else if (lider) dir = "up";
+  g.setAttribute("class", "seta " + (dir || "off"));
+  g.style.color = dir === "dn" ? "#ef4444" : "#22c55e";
+  txt.textContent = rot;
+}
+
+// Foto oficial do TSE; o recorte em PNG só entra se o TSE não tiver a foto
+function fotoEm(img, c) {
+  const url = c.sq ? `${ROOT}/fotos/br/${c.sq}.jpeg` : FOTOS_RECORTE[c.n];
+  if (!url || img.getAttribute("src") === url) return;
+  img.onerror = () => { img.onerror = null; if (FOTOS_RECORTE[c.n]) img.src = FOTOS_RECORTE[c.n]; };
+  img.src = url;
+}
+
+function nomePainel(c) {
+  return `${c.nome || "–"}<br><span class="pn-partido" style="background:${cor(c.partido)}">${c.partido || ""}${c.n ? " · " + c.n : ""}</span>`;
+}
+
+// Lado fixo por número (maior número à direita) para as fotos não trocarem de lugar quando a liderança muda.
+// O painel e a tabela de estados usam a mesma ordem: [esquerda, direita]
+const ladosPainel = top => top.length > 1
+  ? [...top].sort((a, b) => (+a.n || 0) - (+b.n || 0))
+  : [null, top[0]];
+
+function renderDuel(top, resto, somaTotal) {
+  if (!top || top.length === 0) return;
+  const [esq, dir] = ladosPainel(top);
+  const lider = top[0];
+  // Cores da tabela de estados: --c1 = esquerda, --c2 = direita (como no painel)
+  document.documentElement.style.setProperty("--c1-color", esq ? cor(esq.partido) : "#64748b");
+  document.documentElement.style.setProperty("--c2-color", cor(dir.partido));
+
+  // Fotos e nomes
+  const f1 = document.getElementById("pnFoto1"), f2 = document.getElementById("pnFoto2");
+  f2.style.setProperty("--cor", cor(dir.partido));
+  fotoEm(document.getElementById("c2Img"), dir);
+  document.getElementById("c2Name").innerHTML = nomePainel(dir);
+  f1.style.display = esq ? "" : "none";
+  if (esq) {
+    f1.style.setProperty("--cor", cor(esq.partido));
+    fotoEm(document.getElementById("c1Img"), esq);
+    document.getElementById("c1Name").innerHTML = nomePainel(esq);
+  }
+
+  // Percentuais e votos (contadores animados) + setas
+  const c1Pct = document.getElementById("c1Pct");
+  if (esq) {
+    animarNum(c1Pct, esq.p, fmtPct);
+    animarNum(document.getElementById("c1Votes"), esq.v, fmtVotos);
+  }
+  animarNum(document.getElementById("c2Pct"), dir.p, fmtPct);
+  animarNum(document.getElementById("c2Votes"), dir.v, fmtVotos);
+  if (esq) tend(esq.key + "|BR", esq.p);
+  tend(dir.key + "|BR", dir.p);
+  setaTend("seta1", esq ? esq.key + "|BR" : "", esq === lider && esq && esq.v > 0);
+  setaTend("seta2", dir.key + "|BR", dir === lider && dir.v > 0);
+  if (!esq) document.getElementById("seta1").setAttribute("class", "seta off");
+
+  // Anel: fatia amarela (esquerda) centrada em 180°, lado do candidato da esquerda
+  const pE = esq ? esq.p || 0 : 0, pD = dir.p || 0;
+  const frac = pE + pD > 0 ? pE / (pE + pD) : 0.5;
+  const C = 2 * Math.PI * 150;
+  const fatia = document.getElementById("pzFatia");
+  fatia.style.strokeDasharray = `${frac * C} ${C}`;
+  fatia.style.transform = `rotate(${180 - frac * 180}deg)`;
+
+  // Barra lateral
+  const t = D.br && D.br.tot ? D.br.tot : {};
+  const votos = t.c ?? somaTotal;
+  const pctE = t.pea ?? (t.e ? (t.ea ?? votos) / t.e * 100 : null);
+  animarNum(document.getElementById("pnVotosAp"), votos, fV);
+  document.getElementById("pnVotosApSub").textContent = t.e ? `de ${fV(t.e)} eleitores` : "";
+  animarNum(document.getElementById("pnSecoes"), t.pst, v => `${fP(v)}%`);
+  document.getElementById("pnSecoesSub").textContent = t.st != null && t.s != null ? `${fV(t.st)} de ${fV(t.s)}` : "";
+  animarNum(document.getElementById("pnCompar"), pctE, v => `${fP(v)}%`);
+  document.getElementById("pnComparSub").textContent = t.vv != null ? `${fV(t.vv)} votos válidos` : "";
+  document.getElementById("pnHora").textContent = new Date().toLocaleTimeString("pt-BR");
+  const CA = 2 * Math.PI * 70;
+  document.getElementById("pnAnel").style.strokeDasharray = `${(Math.min(100, t.pst || 0) / 100) * CA} ${CA}`;
+  animarNum(document.getElementById("pnAnelTxt"), t.pst, v => `${v == null ? "–" : Math.round(v)}%`);
+
+  // Diferença em votos e pontos
+  const seg = top[1];
+  const diffV = seg ? lider.v - seg.v : lider.v;
+  const diffP = (lider.p || 0) - (seg ? seg.p || 0 : 0);
+  document.getElementById("duelDiffBadge").innerHTML = (!lider.v && (!seg || !seg.v))
+    ? "Aguardando primeiras seções"
+    : `Vantagem de <b>${lider.nome.split(" ")[0]}</b>: ${fV(diffV)} votos (${fP(diffP)} p.p.)`;
+
+  // Outros candidatos caso 1º turno
+  const oRow = document.getElementById("outrosCandsRow");
+  if (resto && resto.length > 0) {
+    oRow.style.display = "flex";
+    oRow.innerHTML = `<span class="tag-outros">Outros candidatos:</span>` + resto.map(c =>
+      `<div class="outros-cand-pill"><span style="color:${cor(c.partido)}">●</span> <b>${c.nome.split(" ")[0]}</b> <span>${fP(c.p)}%</span> <small>(${fV(c.v)})</small></div>`
+    ).join("");
+  } else {
+    oRow.style.display = "none";
+  }
+
+  // Atualiza cabeçalho da tabela
+  cabecalhoTabela(esq, dir);
+}
+
+// ---------------- TABELA ÚNICA DE ESTADOS ----------------
+// Cabeçalho com foto e partido, na mesma ordem do painel
+function cabecalhoTabela(esq, dir) {
+  [[1, esq], [2, dir]].forEach(([i, c]) => {
+    const th = document.getElementById("thCand" + i);
+    th.style.visibility = c ? "" : "hidden";
+    if (!c) return;
+    document.getElementById(`thCand${i}Name`).textContent = c.nome;
+    const pt = document.getElementById(`thCand${i}Party`);
+    pt.textContent = `${c.partido || ""}${c.n ? " · " + c.n : ""}`;
+    pt.style.background = cor(c.partido);
+    const img = document.getElementById(`thCand${i}Img`);
+    th.style.setProperty("--cor", cor(c.partido));
+    fotoEm(img, c);
+    const op = document.querySelector(`#ord option[value="c${i}"]`);
+    if (op) op.textContent = `Maior % ${c.nome.split(" ")[0]}`;
+  });
+}
+// Selo "1ºT xx,x% · ±y,y": % do candidato no 1º turno (só entre os 2 do 2º turno) e a diferença para agora
+function selo1T(ufs, c, cs, pAgora, temVoto) {
+  if (!REF1T || CFG.turno !== 2 || !c || !temVoto) return "";
+  const chaves = cs.filter(Boolean).map(x => x.key), r = share1T(ufs, chaves, c.key);
+  if (r == null) return "";
+  const d = pAgora - r, cls = Math.abs(d) < 0.05 ? "eq" : d > 0 ? "up" : "dn";
+  return `<span class="d1t ${cls}" title="1º turno: ${fP(r)}% (considerando só os 2 candidatos)">1ºT ${fP(r)}% · ${d >= 0 ? "+" : "−"}${fP(Math.abs(d))}</span>`;
+}
+
+function renderTabelaEstados(top) {
+  const c1 = top[0], c2 = top.length > 1 ? top[1] : null;
+  const tbody = document.getElementById("stateTableBody");
+  if (!tbody) return;
+
+  const pega = (d, c) => {
+    if (!c || !d || !d.cands) return { v: 0, p: 0 };
+    const x = d.cands.get(c.key);
+    return { v: x ? x.v : 0, p: x ? x.p : 0 };
+  };
+
+  const ord = document.getElementById("ord").value;
+
+  const regHtmlList = REGIOES.map(([reg, ufs]) => {
+    let rV1 = 0, rV2 = 0, rTotalVotos = 0, rSecTot = 0, rSecApur = 0;
+
+    const ufsData = ufs.map(uf => {
+      const d = D[uf];
+      const nome = NOME_UF[uf] || uf.toUpperCase();
+      const pst = d && d.tot ? d.tot.pst || 0 : 0;
+      const somaV = d && d.somaV ? d.somaV : 0;
+      const x1 = pega(d, c1);
+      const x2 = pega(d, c2);
+
+      rV1 += x1.v;
+      rV2 += x2.v;
+      rTotalVotos += somaV;
+      if (d && d.tot) {
+        if (d.tot.s) rSecTot += d.tot.s;
+        if (d.tot.st) rSecApur += d.tot.st;
+      }
+
+      const l1 = x1.v > x2.v && x1.v > 0;
+      const l2 = x2.v > x1.v && x2.v > 0;
+      const diffPP = Math.abs(x1.p - x2.p);
+      const leadNome = l1 ? (c1.partido || c1.nome.split(" ")[0]) : (l2 ? (c2.partido || c2.nome.split(" ")[0]) : "=");
+
+      return { uf, nome, pst, somaV, x1, x2, l1, l2, diffPP, leadNome };
+    });
+
+    if (ord === "c1") ufsData.sort((a, b) => b.x1.p - a.x1.p);
+    else if (ord === "c2") ufsData.sort((a, b) => b.x2.p - a.x2.p);
+    else if (ord === "apur") ufsData.sort((a, b) => b.pst - a.pst);
+    else if (ord === "alf") ufsData.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    const rL1 = rV1 > rV2 && rV1 > 0;
+    const rL2 = rV2 > rV1 && rV2 > 0;
+    const rP1 = rTotalVotos ? (rV1 / rTotalVotos * 100) : 0;
+    const rP2 = rTotalVotos ? (rV2 / rTotalVotos * 100) : 0;
+    const rDiffPP = Math.abs(rP1 - rP2);
+    const rApurPct = rSecTot ? (rSecApur / rSecTot * 100) : (ufsData.reduce((s, u) => s + u.pst, 0) / ufsData.length);
+
+    const rowsHtml = ufsData.map(u => {
+      const tot2 = (u.x1.v + u.x2.v) || 1;
+      const barW1 = (u.x1.v / tot2) * 100;
+      const barW2 = (u.x2.v / tot2) * 100;
+
+      return `
+        <div class="uf-row">
+          <div class="td-uf-title">
+            <div class="td-uf-main">
+              <span class="uf-dot" style="background:${u.l1 ? 'var(--c1-color)' : (u.l2 ? 'var(--c2-color)' : '#475569')}"></span>
+              <span class="uf-nome-txt">${u.uf.toUpperCase()} · ${u.nome}</span>
+            </div>
+            <span class="uf-apur-sub">${fP(u.pst)}% apurado</span>
+          </div>
+
+          <div class="td-cand-val ${u.l1 ? 'leader' : ''}">
+            <span class="pct">${fP(u.x1.p)}%</span>
+            <span class="vts">${fV(u.x1.v)}</span>
+            ${tend(c1.key + "|" + u.uf, u.x1.p)}
+            ${selo1T([u.uf], c1, [c1, c2], u.x1.p, u.somaV > 0)}
+          </div>
+
+          <div class="td-cand-val ${u.l2 ? 'leader' : ''}">
+            <span class="pct">${fP(u.x2.p)}%</span>
+            <span class="vts">${fV(u.x2.v)}</span>
+            ${c2 ? tend(c2.key + "|" + u.uf, u.x2.p) : ''}
+            ${selo1T([u.uf], c2, [c1, c2], u.x2.p, u.somaV > 0)}
+          </div>
+
+          <div class="td-comp-col">
+            <div class="mini-split-track">
+              <div class="mini-split-c1" style="width:${barW1}%"></div>
+              <div class="mini-split-c2" style="width:${barW2}%"></div>
+            </div>
+            <span class="mini-diff-lbl">${u.somaV === 0 ? '–' : (u.diffPP < 0.05 ? 'Empate' : `+${fP(u.diffPP)} p.p. ${u.leadNome}`)}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const rTot2 = (rV1 + rV2) || 1;
+    const rBarW1 = (rV1 / rTot2) * 100;
+    const rBarW2 = (rV2 / rTot2) * 100;
+
+    return `
+      <details class="reg-details" data-reg="${reg}" ${abertos.has(reg) ? 'open' : ''}>
+        <summary class="reg-summary">
+          <div class="td-reg-name">
+            <span class="reg-arrow">▸</span>
+            <span>${reg}</span>
+            <small class="reg-apur">(${fP(rApurPct)}% apur.)</small>
+          </div>
+
+          <div class="td-cand-val ${rL1 ? 'leader' : ''}">
+            <span class="pct">${fP(rP1)}%</span>
+            <span class="vts">${fV(rV1)}</span>
+            ${tend(c1.key + "|R:" + reg, rP1)}
+            ${selo1T(ufs, c1, [c1, c2], rP1, rTotalVotos > 0)}
+          </div>
+
+          <div class="td-cand-val ${rL2 ? 'leader' : ''}">
+            <span class="pct">${fP(rP2)}%</span>
+            <span class="vts">${fV(rV2)}</span>
+            ${c2 ? tend(c2.key + "|R:" + reg, rP2) : ''}
+            ${selo1T(ufs, c2, [c1, c2], rP2, rTotalVotos > 0)}
+          </div>
+
+          <div class="td-comp-col">
+            <div class="mini-split-track">
+              <div class="mini-split-c1" style="width:${rBarW1}%"></div>
+              <div class="mini-split-c2" style="width:${rBarW2}%"></div>
+            </div>
+            <span class="mini-diff-lbl">${rTotalVotos === 0 ? '–' : `+${fP(rDiffPP)} p.p. ${rL1 ? c1.partido : (c2 ? c2.partido : '')}`}</span>
+          </div>
+        </summary>
+
+        <div class="reg-rows">
+          ${rowsHtml}
+        </div>
+      </details>
+    `;
+  });
+
+  tbody.innerHTML = regHtmlList.join("");
+
+  tbody.querySelectorAll("details").forEach(d => {
+    d.addEventListener("toggle", () => {
+      const reg = d.dataset.reg;
+      if (d.open) abertos.add(reg);
+      else abertos.delete(reg);
+      updateToggleBtnLabel();
+    });
+  });
+}
+
+function updateToggleBtnLabel() {
+  const btn = document.getElementById("btnToggleAll");
+  if (!btn) return;
+  const allDetails = document.querySelectorAll("#stateTableBody details");
+  const openCount = document.querySelectorAll("#stateTableBody details[open]").length;
+  if (allDetails.length > 0 && openCount === allDetails.length) {
+    btn.textContent = "Recolher todas";
+  } else {
+    btn.textContent = "Expandir todas";
+  }
+}
+
+document.getElementById("btnToggleAll").onclick = () => {
+  const all = document.querySelectorAll("#stateTableBody details");
+  const anyClosed = [...all].some(d => !d.open);
+  all.forEach(d => {
+    d.open = anyClosed;
+    const reg = d.dataset.reg;
+    if (anyClosed) abertos.add(reg); else abertos.delete(reg);
+  });
+  updateToggleBtnLabel();
+};
+
+document.getElementById("ord").onchange = () => D && render();
+
+// ---------------- GRÁFICOS ORIGINAIS DE EVOLUÇÃO ----------------
+let GRAF = null;
+function series() {
+  if (!GRAF) return [];
+  const out = GRAF.top.map(c => ({ key: c.key, nome: c.nome, cor: cor(c.partido),
+    val: pt => pt.c[c.key] && pt.vt ? pt.c[c.key].p : null }));
+  out.push({ key: "__outros", nome: "Outros", cor: "#8a8a8a",
+    val: pt => { if (!pt.vt) return null; let s = 0, n = 0; for (const k in pt.c) if (!GRAF.topKeys.has(k)) { s += pt.c[k].p; n++; } return n ? s : null; } });
+  return out;
+}
+function monoPath(P) {
+  const n = P.length; if (!n) return ""; if (n === 1) return `M${P[0][0]},${P[0][1]}`;
+  const d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d.push((P[i+1][1] - P[i][1]) / (P[i+1][0] - P[i][0] || 1));
+  m[0] = d[0]; m[n-1] = d[n-2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i-1] * d[i] <= 0 ? 0 : (d[i-1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i+1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i+1] / d[i], q = a*a + b*b;
+    if (q > 9) { const k = 3 / Math.sqrt(q); m[i] = k*a*d[i]; m[i+1] = k*b*d[i]; }
+  }
+  let s = `M${P[0][0]},${P[0][1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = (P[i+1][0] - P[i][0]) / 3;
+    s += `C${P[i][0]+h},${P[i][1]+m[i]*h} ${P[i+1][0]-h},${P[i+1][1]-m[i+1]*h} ${P[i+1][0]},${P[i+1][1]}`;
+  }
+  return s;
+}
+function xTicks(t0, t1, X, H, w) {
+  const multi = new Date(t0).toDateString() !== new Date(t1).toDateString();
+  const lbl = t => multi ? new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : hhmm(t);
+  if (t1 === t0) return `<text x="${X(t0)}" y="${H - 8}" text-anchor="middle">${lbl(t0)}</text>`;
+  const maxN = Math.max(2, Math.floor(w / (multi ? 90 : 55)));
+  const passos = [5, 10, 15, 20, 30, 60, 120, 180, 360, 720, 1440].map(m => m * 60000);
+  const st = passos.find(x => (t1 - t0) / x <= maxN) || passos[passos.length - 1];
+  let g = "";
+  for (let t = Math.ceil(t0 / st) * st; t <= t1; t += st) g += `<text x="${X(t)}" y="${H - 8}" text-anchor="middle">${lbl(t)}</text>`;
+  return g;
+}
+const hhmm = t => new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+// Selo no painel com os marcos de decisão
+function renderStatus(top) {
+  const el = document.getElementById("pnStatus");
+  const fin = CFG.turno === 2 && top.length > 1 && !CFG.final ? projetarFinal(series()) : null;
+  const m = fin && fin.marcos;
+  const t = D && D.br && D.br.tot ? D.br.tot : {};
+  if (!m || !m.vantagem || (t.pst || 0) >= 99.995) { el.hidden = true; return; }
+  const nome = (top.find(c => c.key === m.lider) || top[0]).nome.split(" ")[0];
+  el.hidden = false;
+  if (m.matematico) {
+    el.className = "pn-status mat";
+    el.innerHTML = `<b>✔ ${nome} ELEITO (MATEMATICAMENTE)</b>vantagem de ${fV(m.vantagem)} votos supera os ≈${fV(m.faltam)} válidos que faltam`;
+  } else if (m.pratico) {
+    el.className = "pn-status pra";
+    el.innerHTML = `<b>◆ PRATICAMENTE DECIDIDO: ${nome}</b>vence mesmo se o que falta votar como no 1º turno<br>faltam ≈${fV(m.faltam)} válidos · vantagem ${fV(m.vantagem)}`;
+  } else {
+    el.className = "pn-status abe";
+    el.innerHTML = `<b>○ EM ABERTO</b>faltam ≈${fV(m.faltam)} votos válidos · vantagem atual ${fV(m.vantagem)}`;
+  }
+}
+
+// ---------- PROJEÇÃO ----------
+// Candidatos: resultado FINAL estimado somando as UFs (não extrapola a linha nacional, que depende da ordem das urnas).
+//   votos válidos finais da UF = válidos apurados / fração de seções apuradas (já embute o comparecimento real);
+//   com pouca apuração (< 15% das seções) o % atual é puxado para o resultado da UF no 1º turno (só os 2 candidatos).
+// Seções/eleitorado: tendência temporal, desacelerando perto do fim (o que falta cai de forma exponencial).
+const PROJ_MIN = 30, PROJ_COR = "#fbbf24";
+
+// Referência do 1º turno por UF (votos dos candidatos e válidos), para a mesma eleição/ano
+let REF1T = null;
+async function carregarRef1T() {
+  if (CFG.turno !== 2 || REF1T) return;
+  if (CFG.estatico) {   // 2022: colunas 2..6 do D22 são o 1º turno (Lula, Bolsonaro, Tebet, Ciro, demais)
+    REF1T = Object.fromEntries(Object.entries(D22).map(([uf, a]) => [uf, { vv: a[2] + a[3] + a[4] + a[5] + a[6], v: { "13": a[2], "22": a[3] } }]));
+    return;
+  }
+  const t1 = Object.values(ELEICOES).find(x => x.ano === CFG.ano && x.turno === 1);
+  if (!t1) return;
+  const cache = lsGet("_ref1t", null);
+  if (cache && Object.keys(cache).length > 20) { REF1T = cache; return; }
+  const raiz = `https://resultados.tse.jus.br/oficial/ele${t1.ano}/${t1.cod}`, e6 = t1.cod.padStart(6, "0");
+  const out = {};
+  await Promise.allSettled(UFS.map(async uf => {
+    for (const u of [`${raiz}/dados/${uf}/${uf}-c0001-e${e6}-u.json`, `${raiz}/dados-simplificados/${uf}/${uf}-c0001-e${e6}-r.json`]) {
+      try {
+        const r = await fetch(u); if (!r.ok) continue;
+        const x = extrair(await r.json());
+        out[uf] = { vv: x.tot.vv ?? x.somaV, v: Object.fromEntries([...x.cands.values()].map(c => [c.key, c.v])) };
+        return;
+      } catch (e) {}
+    }
+  }));
+  if (Object.keys(out).length) { REF1T = out; lsSet("_ref1t", out); }
+}
+
+// % de cada candidato no 1º turno de uma ou mais UFs, contando só os candidatos em "chaves"
+function share1T(ufs, chaves, k) {
+  if (!REF1T) return null;
+  let t = 0, v = 0;
+  ufs.forEach(uf => { const r = REF1T[uf]; if (!r) return; chaves.forEach(c => t += r.v[c] || 0); v += r.v[k] || 0; });
+  return t ? v / t * 100 : null;
+}
+
+// Variação (p.p.) de cada candidato em relação ao 1º turno, média das UFs ponderada pelos votos apurados × fração apurada
+// (estados mais fechados pesam mais: menos viés de ordem de apuração)
+function swingNacional(chaves) {
+  if (!REF1T || !D) return null;
+  const sw = Object.fromEntries(chaves.map(k => [k, 0]));
+  let peso = 0;
+  for (const uf of UFS) {
+    const d = D[uf]; if (!d || !d.cands || !d.tot || !REF1T[uf]) continue;
+    const frac = Math.min(1, (d.tot.pst || 0) / 100), v2 = chaves.reduce((t, k) => t + ((d.cands.get(k) || {}).v || 0), 0);
+    if (!v2 || frac <= 0) continue;
+    const w = v2 * frac;
+    chaves.forEach(k => sw[k] += w * (((d.cands.get(k) || {}).v || 0) / v2 * 100 - share1T([uf], chaves, k)));
+    peso += w;
+  }
+  if (!peso) return null;
+  chaves.forEach(k => sw[k] /= peso);
+  // dispersão do swing do 1º candidato entre as UFs (mesmos pesos)
+  const k0 = chaves[0];
+  let v = 0;
+  for (const uf of UFS) {
+    const d = D[uf]; if (!d || !d.cands || !d.tot || !REF1T[uf]) continue;
+    const frac = Math.min(1, (d.tot.pst || 0) / 100), v2 = chaves.reduce((t, k) => t + ((d.cands.get(k) || {}).v || 0), 0);
+    if (!v2 || frac <= 0) continue;
+    const x = ((d.cands.get(k0) || {}).v || 0) / v2 * 100 - share1T([uf], chaves, k0) - sw[k0];
+    v += v2 * frac * x * x;
+  }
+  Object.defineProperty(sw, "dp", { value: Math.sqrt(v / peso), enumerable: false });
+  return sw;
+}
+
+// Resultado final estimado somando as UFs.
+//   votos já apurados: entram como estão;
+//   votos que faltam: % do 1º turno da UF (só entre os candidatos do 2º turno) + swing estimado,
+//     swing = mistura do swing da própria UF (peso = fração apurada) com o swing nacional;
+//   total de válidos da UF: válidos apurados / fração apurada (com < 5% apurado, válidos do 1º turno).
+// Sem dados do 1º turno, cai no método antigo (o % atual vale para o que falta).
+function projetarFinal(S) {
+  if (!D || !GRAF) return null;
+  const chaves = S.filter(x => x.key !== "__outros").map(x => x.key);
+  if (!chaves.length) return null;
+  const br = D.br && D.br.cands ? D.br : null;
+  const somaBr = br ? br.somaV || 0 : 0;
+  const shareBr = k => { const c = br && br.cands.get(k); return c && somaBr ? c.v / somaBr * 100 : 0; };
+  const swN = CFG.turno === 2 ? swingNacional(chaves) : null;
+  let total = 0, falta = 0;
+  const soma = Object.fromEntries(chaves.map(k => [k, 0])), cen = Object.fromEntries(chaves.map(k => [k, 0]));
+  for (const uf of UFS) {
+    const d = D[uf]; if (!d || !d.tot) continue;
+    const frac = Math.min(1, (d.tot.pst || 0) / 100);
+    const vvA = d.tot.vv ?? d.somaV ?? 0;
+    const ref = REF1T && REF1T[uf];
+    let finais;
+    if (frac > 0.05 && vvA > 0) finais = vvA / frac;
+    else if (ref && ref.vv) finais = Math.max(vvA, ref.vv);
+    else if (vvA > 0 && frac > 0) finais = vvA / frac;
+    else continue;
+    const restantes = Math.max(0, finais - vvA);
+    const vUF = d.somaV || 0;
+    if (swN) chaves.forEach(k => {
+      const c = d.cands && d.cands.get ? d.cands.get(k) : null, r1 = share1T([uf], chaves, k);
+      cen[k] += (c ? c.v : 0) + restantes * (r1 != null ? r1 : (vUF ? (c ? c.v : 0) / vUF * 100 : shareBr(k))) / 100;
+    });
+    for (const k of chaves) {
+      const c = d.cands && d.cands.get ? d.cands.get(k) : null;
+      const atual = vUF ? (c ? c.v : 0) / vUF * 100 : null;
+      const r1 = swN ? share1T([uf], chaves, k) : null;
+      let pResto;
+      if (r1 != null) {
+        const swUF = atual != null ? atual - r1 : swN[k];
+        pResto = r1 + frac * swUF + (1 - frac) * swN[k];
+      } else pResto = atual != null ? atual : shareBr(k);
+      soma[k] += (atual != null ? vvA * atual / 100 : 0) + restantes * Math.max(0, Math.min(100, pResto)) / 100;
+    }
+    total += finais;
+    falta += restantes;
+  }
+  if (!total) return null;
+  const final = {};
+  const somaTop = chaves.reduce((t, k) => t + soma[k], 0);
+  chaves.forEach(k => final[k] = soma[k] / total * 100);
+  if (S.some(x => x.key === "__outros")) final.__outros = Math.max(0, 100 - somaTop / total * 100);
+  // faixa de incerteza: o erro só pode vir do que falta apurar, então escala linearmente com essa fração.
+  // Com o swing medido, usa ±2 desvios-padrão da variação entre UFs (mínimo 1 p.p.) sobre a parte que falta;
+  // sem 1º turno de referência, mantém a heurística de ±4 p.p.
+  const banda = (swN && swN.dp != null ? 2 * Math.max(1, swN.dp) : 4) * falta / total;
+  const somaCen = chaves.reduce((t, k) => t + cen[k], 0);
+  const cen1T = swN && somaCen ? Object.fromEntries(chaves.map(k => [k, cen[k] / somaCen * 100])) : null;
+  // marcos: matemático (critério TSE: vantagem > todos os válidos que faltam) e prático (vence até no cenário do 1º turno)
+  const ordem = chaves.map(k => ({ k, v: br && br.cands.get(k) ? br.cands.get(k).v : 0 })).sort((a, b) => b.v - a.v);
+  const lider = ordem[0], vantagem = ordem.length > 1 ? lider.v - ordem[1].v : lider.v;
+  const marcos = {
+    lider: lider.k, vantagem, faltam: falta,
+    matematico: ordem.length > 1 && vantagem > falta,
+    pratico: !!(cen1T && final[lider.k] > 50 && cen1T[lider.k] > 50),
+    virada: !!(cen1T && ordem.length > 1 && final[ordem[1].k] > 50),
+  };
+  return { final, banda, swing: swN, cen1T, marcos, base1T: swN ? Object.fromEntries(chaves.map(k => [k, share1T(UFS, chaves, k)])) : null };
+}
+
+function projecao(SER, S) {
+  const ult = SER[SER.length - 1];
+  if (!ult || ult.pst == null || ult.pst >= 99.995 || !ult.vt) return null;
+  const fin = projetarFinal(S);
+  // ritmo de seções na última meia hora
+  const ref = SER.find(pt => pt.pst != null && pt.t >= ult.t - PROJ_MIN * 60000 && pt.t < ult.t);
+  const dt = ref ? ult.t - ref.t : 0;
+  const ritmo = ref && dt > 0 && ult.pst > ref.pst ? (ult.pst - ref.pst) / dt : null;
+  const ritmoE = ref && dt > 0 && ult.pe != null && ref.pe != null && ult.pe > ref.pe ? (ult.pe - ref.pe) / dt : null;
+  if (!fin && ritmo == null) return null;
+  // o que falta cai exponencialmente, começando no ritmo observado: curva em S no final da apuração
+  const curva = (v0, r, t) => { const resto = 100 - v0; return resto <= 0 || r == null ? null : 100 - resto * Math.exp(-r * t / resto); };
+  const pts = [];
+  for (let k = 1; k <= PROJ_MIN / 5; k++) {
+    const t = ult.t + k * BUCKET, d = t - ult.t;
+    const vals = { __sec: curva(ult.pst, ritmo, d), __ele: ult.pe != null ? curva(ult.pe, ritmoE, d) : null };
+    // só projeta linhas que existem agora (ex.: "Outros" no 2º turno fica de fora)
+    if (fin) S.forEach(s => { if (fin.final[s.key] != null && s.val(ult) != null) vals[s.key] = fin.final[s.key]; });
+    pts.push({ t, vals });
+  }
+  return { ref, ult, pts, final: fin ? fin.final : null, banda: fin ? fin.banda : 0, swing: fin ? fin.swing : null, base1T: fin ? fin.base1T : null, cen1T: fin ? fin.cen1T : null, marcos: fin ? fin.marcos : null };
+}
+
+function desenhar() {
+  const SER = serieVis();
+  desenharUF();
+  const svg = document.getElementById("chart"), tip = document.getElementById("tip");
+  const S = series();
+  document.getElementById("leg").innerHTML = S.map(s =>
+    `<button data-k="${s.key}" class="${OCULTOS.has(s.key) ? "off" : ""}"><i style="background:${s.cor}"></i>${s.nome}</button>`).join("") +
+    AREAS.map(a => `<button data-k="${a.key}" class="area ${OCULTOS.has(a.key) ? "off" : ""}"><i class="${a.area ? "" : "traco"}" style="background:${a.cor}"></i>${a.nome} <small>(fundo, 0–100%)</small></button>`).join("") +
+    `<button data-k="__proj" class="area ${OCULTOS.has("__proj") ? "off" : ""}" title="Candidatos: resultado final estimado somando as UFs. Seções: ritmo da última meia hora, desacelerando no fim."><i class="traco" style="background:repeating-linear-gradient(90deg,${PROJ_COR} 0 4px,transparent 4px 7px)"></i>Projeção</button>`;
+  document.querySelectorAll("#leg button").forEach(b => b.onclick = () => {
+    const k = b.dataset.k; OCULTOS.has(k) ? OCULTOS.delete(k) : OCULTOS.add(k); lsSet("_ocultos", [...OCULTOS]); desenhar();
+  });
+  document.getElementById("evoInfo").textContent = SER.length
+    ? `${SER.length} ponto${SER.length > 1 ? "s" : ""} de ${hhmm(SER[0].t)} a ${hhmm(SER[SER.length - 1].t)}` + (SER[SER.length - 1].pst >= 99.995 ? " · apuração concluída (travado)" : "") + ` · um ponto a cada 5 minutos · salvo neste navegador`
+    : "um ponto a cada 5 minutos · salvo neste navegador";
+
+  const W = svg.clientWidth || 800, H = svg.clientHeight || 300, ml = 42, mr = 150, mt = 14, mb = 28;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const vis = S.filter(s => !OCULTOS.has(s.key));
+  const areas = AREAS.filter(a => !OCULTOS.has(a.key));
+  if (!SER.length || (!vis.length && !areas.length)) { svg.innerHTML = ""; tip.style.display = "none";
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle">${SER.length ? "Todas as linhas estão ocultas" : "Aguardando a primeira leitura…"}</text>`; return; }
+
+  const proj = OCULTOS.has("__proj") ? null : projecao(SER, S);
+  const t0 = SER[0].t, t1 = SER[SER.length - 1].t, tEnd = proj ? proj.pts[proj.pts.length - 1].t : t1;
+  const X = t => tEnd === t0 ? ml + (W - ml - mr) / 2 : ml + (t - t0) / (tEnd - t0) * (W - ml - mr);
+  let lo = Infinity, hi = -Infinity;
+  vis.forEach(s => SER.forEach(pt => { const v = s.val(pt); if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
+  if (proj) vis.forEach(s => proj.pts.forEach(p => { const v = p.vals[s.key]; if (v != null) { lo = Math.min(lo, v - proj.banda); hi = Math.max(hi, v + proj.banda); } }));
+  if (lo === Infinity) { lo = 0; hi = 100; }
+  const pad = Math.max(0.5, (hi - lo) * 0.12); lo = Math.max(0, lo - pad); hi = Math.min(100, hi + pad);
+  const Y = v => mt + (1 - (v - lo) / (hi - lo || 1)) * (H - mt - mb);
+
+  const raw = (hi - lo) / 5, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 2.5, 5, 10].map(x => x * mag).find(x => x >= raw);
+  let g = "";
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step)
+    g += `<line class="grid" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</text>`;
+  g += xTicks(t0, tEnd, X, H, W - ml - mr);
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${H - mb}" y2="${H - mb}"/>`;
+  if (proj) g += `<rect x="${X(t1)}" y="${mt}" width="${X(tEnd) - X(t1)}" height="${H - mt - mb}" fill="rgba(226,232,240,.04)"/>
+    <line x1="${X(t1)}" x2="${X(t1)}" y1="${mt}" y2="${H - mb}" stroke="rgba(226,232,240,.35)" stroke-dasharray="2 4"/>
+    <text x="${(X(t1) + X(tEnd)) / 2}" y="${mt + 12}" text-anchor="middle" class="projl">PROJEÇÃO</text>`;
+
+  const YA = v => mt + (1 - v / 100) * (H - mt - mb);
+  const ends = [];
+  g += `<defs><linearGradient id="evoArea" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#38bdf8" stop-opacity=".34"/><stop offset="1" stop-color="#38bdf8" stop-opacity=".03"/></linearGradient></defs>`;
+  areas.forEach(a => {
+    const P = SER.filter(pt => a.val(pt) != null).map(pt => [X(pt.t), YA(a.val(pt))]);
+    if (!P.length) return;
+    const d = monoPath(P);
+    if (a.area && P.length > 1) g += `<path d="${d} L${P[P.length-1][0]},${YA(0)} L${P[0][0]},${YA(0)} Z" fill="url(#evoArea)"/>`;
+    g += `<path d="${d}" fill="none" stroke="${a.cor}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".85"/>`;
+    const last = SER[SER.length - 1], lv = a.val(last);
+    if (lv != null) ends.push({ y: YA(lv), yv: YA(lv), x: X(last.t), s: a, v: lv, rot: a.rot, sc: YA });
+  });
+
+  vis.forEach(s => {
+    const P = SER.map(pt => [X(pt.t), s.val(pt)]).filter(p => p[1] != null).map(p => [p[0], Y(p[1])]);
+    if (!P.length) return;
+    g += `<path d="${monoPath(P)}" fill="none" stroke="${s.cor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if (P.length <= 40) P.forEach(p => g += `<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="${s.cor}"/>`);
+    const last = SER[SER.length - 1], lv = s.val(last);
+    if (lv != null) ends.push({ y: Y(lv), yv: Y(lv), x: X(last.t), s, v: lv, sc: Y });
+  });
+
+  // linhas tracejadas da projeção, saindo do último ponto real
+  if (proj) {
+    const desenhaProj = (key, cor, sc, area) => {
+      const v0 = key === "__sec" ? proj.ult.pst : key === "__ele" ? proj.ult.pe : (S.find(x => x.key === key) || { val: () => null }).val(proj.ult);
+      if (v0 == null) return;
+      const P = [[X(proj.ult.t), sc(v0)], ...proj.pts.filter(p => p.vals[key] != null).map(p => [X(p.t), sc(p.vals[key])])];
+      if (P.length < 2) return;
+      const d = monoPath(P);
+      if (area) g += `<path d="${d} L${P[P.length-1][0]},${sc(0)} L${P[0][0]},${sc(0)} Z" fill="${PROJ_COR}" opacity=".07"/>`;
+      g += `<path d="${d}" fill="none" stroke="${cor}" stroke-width="${area !== undefined ? 1.5 : 2.5}" stroke-dasharray="${area !== undefined ? "3 4" : "8 5"}" opacity="${area !== undefined ? .6 : .95}" stroke-linecap="round"/>`;
+    };
+    areas.forEach(a => desenhaProj(a.key, PROJ_COR, YA, !!a.area));
+    // candidatos: faixa de incerteza + reta no resultado final projetado (cor da projeção, ponta na cor do candidato)
+    if (proj.final) vis.forEach(s => {
+      const v = proj.pts[0].vals[s.key]; if (v == null) return;
+      g += `<rect x="${X(t1)}" y="${Y(Math.min(100, v + proj.banda))}" width="${X(tEnd) - X(t1)}" height="${Math.max(1, Y(Math.max(0, v - proj.banda)) - Y(Math.min(100, v + proj.banda)))}" fill="${PROJ_COR}" opacity=".10"/>`;
+      g += `<line x1="${X(t1 + BUCKET)}" x2="${X(tEnd)}" y1="${Y(v)}" y2="${Y(v)}" stroke="${s.cor}" stroke-width="4" opacity=".55" stroke-linecap="round"/>`;
+      desenhaProj(s.key, PROJ_COR, Y);
+    });
+    const fim = proj.pts[proj.pts.length - 1];
+    ends.forEach(e => {
+      const pv = fim.vals[e.s.key];
+      if (pv == null) return;
+      g += `<circle cx="${e.x}" cy="${e.yv}" r="4" fill="${e.s.cor}" stroke="#07142b" stroke-width="1.5"/>`;
+      e.x = X(fim.t); e.v = pv; e.y = e.yv = e.sc(pv); e.proj = true;
+    });
+  }
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i-1].y < 15) ends[i].y = ends[i-1].y + 15;
+  ends.forEach(e => g += `<circle cx="${e.x}" cy="${e.yv}" r="4.5" fill="${e.proj ? e.s.cor : e.s.cor}" stroke="${e.proj ? PROJ_COR : "#07142b"}" stroke-width="${e.proj ? 2.5 : 1.5}"/>
+    <text class="endl" x="${e.x + 8}" y="${e.y + 4}" style="fill:${e.s.cor}">${e.proj ? "≈" : ""}${fP(e.v)}% ${e.rot || e.s.nome.split(" ")[0]}</text>`);
+  g += `<line id="hl" x1="0" x2="0" y1="${mt}" y2="${H - mb}" stroke="rgba(226,232,240,.5)" stroke-dasharray="3 3" style="display:none"/>
+    <rect x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}" fill="transparent" id="hov"/>`;
+  svg.innerHTML = g;
+
+  const hov = svg.querySelector("#hov"), hl = svg.querySelector("#hl");
+  hov.onmousemove = ev => {
+    const r = svg.getBoundingClientRect(), mx = (ev.clientX - r.left) * W / r.width;
+    let i = 0, best = Infinity; SER.forEach((pt, j) => { const d = Math.abs(X(pt.t) - mx); if (d < best) { best = d; i = j; } });
+    let pj = null;
+    if (proj) proj.pts.forEach(p => { const d = Math.abs(X(p.t) - mx); if (d < best) { best = d; pj = p; } });
+    if (pj) {
+      const x = X(pj.t);
+      hl.setAttribute("x1", x); hl.setAttribute("x2", x); hl.style.display = "";
+      const ls = S.map(s => ({ s, v: pj.vals[s.key] })).filter(o => o.v != null).sort((a, b) => b.v - a.v);
+      tip.innerHTML = `<b style="color:${PROJ_COR}">Projeção</b>` +
+        (proj.final ? `<div class="m" style="border:0;margin:0;padding:0 0 3px">Resultado final: apurado + o que falta em cada UF</div>` +
+          `<table class="tip-proj"><tr><th></th><th>Estimativa</th>${proj.cen1T ? `<th title="O que falta apurar em cada UF vota exatamente como no 1º turno">Se o que falta<br>votar = 1º turno</th>` : ""}</tr>` +
+          ls.map(o => `<tr><td><i style="background:${o.s.cor}"></i>${o.s.nome}</td><td>≈${fP(o.v)}% <small>±${fP(proj.banda)}</small></td>` +
+            (proj.cen1T ? `<td>${proj.cen1T[o.s.key] != null ? fP(proj.cen1T[o.s.key]) + "%" : "–"}</td>` : "") + `</tr>`).join("") + `</table>` : "") +
+        (proj.swing && proj.base1T ? `<div class="m">1º turno (só os 2): ` + ls.filter(o => proj.base1T[o.s.key] != null).map(o =>
+            `${o.s.nome.split(" ")[0]} ${fP(proj.base1T[o.s.key])}%`).join(" · ") +
+          `<br>Variação média vs 1º turno: ` + ls.filter(o => proj.swing[o.s.key] != null).map(o =>
+            `<b style="display:inline;font-size:inherit;color:${o.s.cor}">${o.s.nome.split(" ")[0]} ${proj.swing[o.s.key] >= 0 ? "+" : "−"}${fP(Math.abs(proj.swing[o.s.key]))}</b>`).join(" · ") + ` p.p.</div>` : "") +
+        (proj.marcos ? `<div class="m">Faltam ≈${fV(proj.marcos.faltam)} válidos · vantagem ${fV(proj.marcos.vantagem)}<br>` +
+          `Decidido matematicamente: <b style="display:inline;font-size:inherit;color:${proj.marcos.matematico ? "#4ade80" : "#9fb2c8"}">${proj.marcos.matematico ? "sim" : "não"}</b> · ` +
+          `na prática: <b style="display:inline;font-size:inherit;color:${proj.marcos.pratico ? "#fbbf24" : "#9fb2c8"}">${proj.marcos.pratico ? "sim" : "não"}</b></div>` : "") +
+        `<div class="m">Às ${hhmm(pj.t)}:` + AREAS.map(a => `<div class="r"><span><i style="background:${a.cor}"></i>${a.nome}</span><span>${pj.vals[a.key] == null ? "–" : "≈" + fP(pj.vals[a.key]) + "%"}</span></div>`).join("") +
+        `Estimativa a partir dos dados por UF; não é resultado oficial.</div>`;
+      tip.style.display = "block";
+      const px = x * r.width / W;
+      tip.style.left = Math.max(4, Math.min(px + 12, r.width - tip.offsetWidth - 4)) + "px";
+      tip.style.top = "10px";
+      return;
+    }
+    const pt = SER[i], x = X(pt.t);
+    hl.setAttribute("x1", x); hl.setAttribute("x2", x); hl.style.display = "";
+    const linhas = S.map(s => ({ s, v: s.val(pt) })).filter(o => o.v != null).sort((a, b) => b.v - a.v);
+    const dif = linhas.length >= 2 && linhas[0].s.key !== "__outros" && linhas[1].s.key !== "__outros" ? linhas[0].v - linhas[1].v : null;
+    tip.innerHTML = `<b>${hhmm(pt.t)}</b>` +
+      linhas.map(o => `<div class="r"><span><i style="background:${o.s.cor}"></i>${o.s.nome}</span><span>${fP(o.v)}%</span></div>`).join("") +
+      (dif != null ? `<div class="m">Diferença 1º–2º: ${fP(dif)} p.p.</div>` : "") +
+      `<div class="m">` + AREAS.map(a => `<div class="r"><span><i style="background:${a.cor}"></i>${a.nome}</span><span>${fP(a.val(pt))}%</span></div>`).join("") +
+      (pt.vt != null ? `${fV(pt.vt)} votos apurados` : "") + `</div>`;
+    tip.style.display = "block";
+    const px = x * r.width / W;
+    tip.style.left = Math.min(px + 12, r.width - tip.offsetWidth - 4) + "px";
+    tip.style.top = "10px";
+  };
+  hov.onmouseleave = () => { tip.style.display = "none"; hl.style.display = "none"; };
+}
+
+// Fundo do gráfico de evolução: apuração em escala própria (0% embaixo, 100% no topo)
+const AREAS = [
+  { key: "__sec", nome: "Seções apuradas", rot: "seções", cor: "#38bdf8", val: pt => pt.pst ?? null, area: true },
+  { key: "__ele", nome: "Eleitorado apurado", rot: "eleitorado", cor: "#a78bfa", val: pt => pt.pe ?? null },
+];
+
+// Séries de uma UF: área = % de seções apuradas; linhas = % de cada candidato (mesma ordem do painel)
+function seriesUF(uf) {
+  const pts = serieVis().filter(pt => pt.uf);
+  const cands = GRAF && GRAF.top.length ? (GRAF.top.length > 1 ? ladosPainel(GRAF.top) : GRAF.top) : [];
+  const apur = pts.map(pt => ({ t: pt.t, v: pt.uf[uf] })).filter(o => o.v != null);
+  const linhas = cands.filter(Boolean).map(c => ({
+    c, cor: cor(c.partido),
+    pts: pts.map(pt => ({ t: pt.t, v: pt.ufc && pt.ufc[uf] ? pt.ufc[uf][c.key] : null })).filter(o => o.v != null),
+  }));
+  return { pts, apur, linhas };
+}
+
+// Valor atual de cada candidato na UF (dos dados mais recentes do TSE)
+function pctAtualUF(uf, c) {
+  const d = D && D[uf];
+  const x = d && d.cands && d.cands.get ? d.cands.get(c.key) : null;
+  return x && x.v > 0 ? x.p : null;
+}
+
+// Desenha o gráfico da UF num <svg>. grande = versão do modal (eixos, rótulos e dica ao passar o mouse)
+function graficoUF(svg, uf, W, H, grande, tip) {
+  const { pts, apur, linhas } = seriesUF(uf);
+  const ml = grande ? 46 : 2, mr = grande ? 150 : 2, mt = grande ? 16 : 3, mb = grande ? 30 : 3;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  if (!pts.length) {
+    svg.innerHTML = grande ? `<text x="${W/2}" y="${H/2}" text-anchor="middle">Aguardando a primeira leitura…</text>` : "";
+    return;
+  }
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+  const X = t => t1 === t0 ? ml + (W - ml - mr) / 2 : ml + (t - t0) / (t1 - t0) * (W - ml - mr);
+  const Y = v => mt + (1 - v / 100) * (H - mt - mb);
+
+  let g = "";
+  if (grande) {
+    for (let v = 0; v <= 100; v += 20)
+      g += `<line class="grid" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v}%</text>`;
+    g += xTicks(t0, t1, X, H, W - ml - mr);
+    g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${H - mb}" y2="${H - mb}"/>`;
+  } else {
+    g += `<line x1="0" x2="${W}" y1="${Y(50)}" y2="${Y(50)}" stroke="rgba(148,180,220,.25)" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>`;
+  }
+
+  // área de % apurado
+  const PA = apur.map(p => [X(p.t), Y(p.v)]);
+  if (PA.length > 1) {
+    const d = monoPath(PA);
+    g += `<path d="${d} L${PA[PA.length-1][0]},${Y(0)} L${PA[0][0]},${Y(0)} Z" fill="url(#ufArea)" />`;
+    g += `<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="${grande ? 1.5 : 1}" stroke-dasharray="${grande ? "5 4" : "3 2"}" vector-effect="non-scaling-stroke" opacity=".8"/>`;
+  }
+  // linhas dos candidatos
+  const ends = [];
+  linhas.forEach(l => {
+    const P = l.pts.map(p => [X(p.t), Y(p.v)]);
+    if (!P.length) return;
+    if (P.length > 1) g += `<path d="${monoPath(P)}" fill="none" stroke="${l.cor}" stroke-width="${grande ? 3 : 2}" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`;
+    const lp = l.pts[l.pts.length - 1];
+    ends.push({ x: X(lp.t), y: Y(lp.v), yv: Y(lp.v), v: lp.v, cor: l.cor, nome: l.c.nome.split(" ")[0] });
+  });
+  if (grande) {
+    if (apur.length) { const la = apur[apur.length - 1]; ends.push({ x: X(la.t), y: Y(la.v), yv: Y(la.v), v: la.v, cor: "#38bdf8", nome: "apurado" }); }
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i-1].y < 16) ends[i].y = ends[i-1].y + 16;
+    ends.forEach(e => g += `<circle cx="${e.x}" cy="${e.yv}" r="4.5" fill="${e.cor}" stroke="#07142b" stroke-width="1.5"/>
+      <text class="endl" x="${e.x + 9}" y="${e.y + 4}" style="fill:${e.cor}">${fP(e.v)}% ${e.nome}</text>`);
+    g += `<line class="hl" x1="0" x2="0" y1="${mt}" y2="${H - mb}" stroke="rgba(226,232,240,.5)" stroke-dasharray="3 3" style="display:none"/>
+      <rect class="hov" x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}" fill="transparent"/>`;
+  } else {
+    ends.forEach(e => g += `<circle cx="${e.x}" cy="${e.y}" r="2.2" fill="${e.cor}"/>`);
+  }
+  svg.innerHTML = `<defs><linearGradient id="ufArea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".38"/><stop offset="1" stop-color="#38bdf8" stop-opacity=".04"/>
+    </linearGradient></defs>` + g;
+
+  if (!grande || !tip) return;
+  const hov = svg.querySelector(".hov"), hl = svg.querySelector(".hl");
+  hov.onmousemove = ev => {
+    const r = svg.getBoundingClientRect(), mx = (ev.clientX - r.left) * W / r.width;
+    let i = 0, best = Infinity; pts.forEach((pt, j) => { const d = Math.abs(X(pt.t) - mx); if (d < best) { best = d; i = j; } });
+    const pt = pts[i], x = X(pt.t);
+    hl.setAttribute("x1", x); hl.setAttribute("x2", x); hl.style.display = "";
+    const val = (l) => { const o = l.pts.find(p => p.t === pt.t); return o ? o.v : null; };
+    tip.innerHTML = `<b>${hhmm(pt.t)}</b>` +
+      linhas.map(l => `<div class="r"><span><i style="background:${l.cor}"></i>${l.c.nome}</span><span>${fP(val(l))}%</span></div>`).join("") +
+      `<div class="m">${fP(pt.uf[uf])}% das seções apuradas</div>`;
+    tip.style.display = "block";
+    const px = x * r.width / W;
+    tip.style.left = Math.min(px + 12, r.width - tip.offsetWidth - 4) + "px";
+    tip.style.top = "10px";
+  };
+  hov.onmouseleave = () => { tip.style.display = "none"; hl.style.display = "none"; };
+}
+
+function desenharUF() {
+  const SER = serieVis();
+  const grid = document.getElementById("ufgrid");
+  const pts = SER.filter(pt => pt.uf);
+  const cands = GRAF && GRAF.top.length ? (GRAF.top.length > 1 ? ladosPainel(GRAF.top) : GRAF.top).filter(Boolean) : [];
+  const corLider = uf => {
+    const d = D && D[uf]; if (!d || !d.cands) return "#38bdf8";
+    let m = -1, c = null; d.cands.forEach(x => { if (x.v > m) { m = x.v; c = x; } });
+    return c && m > 0 ? cor(c.partido) : "#38bdf8";
+  };
+  const info = UFS.map(uf => {
+    const serie = pts.map(pt => ({ t: pt.t, v: pt.uf[uf] })).filter(o => o.v != null);
+    const atual = D && D[uf] && D[uf].tot ? D[uf].tot.pst : (serie.length ? serie[serie.length - 1].v : null);
+    const ritmo = serie.length >= 2 ? serie[serie.length - 1].v - serie[serie.length - 2].v : null;
+    return { uf, serie, atual, ritmo };
+  });
+  const ord = document.getElementById("ordUF").value;
+  if (ord === "menos") info.sort((a, b) => (a.atual ?? 101) - (b.atual ?? 101));
+  else if (ord === "mais") info.sort((a, b) => (b.atual ?? -1) - (a.atual ?? -1));
+  else if (ord === "ritmo") info.sort((a, b) => (b.ritmo ?? -1) - (a.ritmo ?? -1));
+
+  grid.innerHTML = info.map(o => {
+    const c = corLider(o.uf), nome = NOME_UF[o.uf] || o.uf.toUpperCase();
+    const det = o.ritmo != null && o.ritmo > 0.005 ? `<span class="up">+${fP(o.ritmo)} p.p.</span> em 5 min` : (o.serie.length >= 2 ? "sem avanço em 5 min" : "aguardando histórico");
+    const cs = cands.map(k => { const p = pctAtualUF(o.uf, k);
+      return `<span title="${k.nome}"><i style="background:${cor(k.partido)}"></i><b style="color:${cor(k.partido)}">${p == null ? "–" : fP(p) + "%"}</b></span>`; }).join("");
+    return `<div class="ufc ${o.atual >= 99.995 ? "done" : ""}" data-uf="${o.uf}" title="Clique para ampliar · ${nome}">
+      <div class="h"><b>${nome}</b><span class="v" title="seções apuradas">${fP(o.atual)}%</span></div>
+      <svg data-uf="${o.uf}" preserveAspectRatio="none"></svg>
+      <div class="bar0"><i style="width:${o.atual || 0}%;background:${c}"></i></div>
+      <div class="ufc-cands">${cs}</div>
+      <div class="d">${det}</div>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll("svg[data-uf]").forEach(svg => graficoUF(svg, svg.dataset.uf, 150, 56, false));
+  grid.querySelectorAll(".ufc").forEach(el => el.onclick = () => abrirModalUF(el.dataset.uf));
+  if (MODAL_UF) desenharModalUF();
+}
+
+// ---------- MODAL AMPLIADO DA UF ----------
+let MODAL_UF = null;
+function abrirModalUF(uf) {
+  MODAL_UF = uf;
+  document.getElementById("ufModal").hidden = false;
+  document.body.style.overflow = "hidden";
+  desenharModalUF();
+}
+function fecharModalUF() {
+  MODAL_UF = null;
+  document.getElementById("ufModal").hidden = true;
+  document.body.style.overflow = "";
+}
+function desenharModalUF() {
+  const uf = MODAL_UF; if (!uf) return;
+  const d = D && D[uf];
+  const pst = d && d.tot ? d.tot.pst : null;
+  document.getElementById("ufModalTit").textContent = `${NOME_UF[uf] || uf.toUpperCase()} (${uf.toUpperCase()})`;
+  const cands = GRAF && GRAF.top.length ? (GRAF.top.length > 1 ? ladosPainel(GRAF.top) : GRAF.top).filter(Boolean) : [];
+  document.getElementById("ufModalKpis").innerHTML =
+    `<div class="k"><span>Seções apuradas</span><b style="color:#38bdf8">${fP(pst)}%</b><small>${d && d.tot && d.tot.st != null ? `${fV(d.tot.st)} de ${fV(d.tot.s)}` : ""}</small></div>` +
+    cands.map(c => { const x = d && d.cands && d.cands.get ? d.cands.get(c.key) : null;
+      return `<div class="k"><span><i style="background:${cor(c.partido)}"></i>${c.nome}</span><b style="color:${cor(c.partido)}">${x && x.v > 0 ? fP(x.p) + "%" : "–"}</b><small>${x ? fV(x.v) + " votos" : ""}</small></div>`; }).join("");
+  const svg = document.getElementById("ufModalChart");
+  graficoUF(svg, uf, svg.clientWidth || 900, 380, true, document.getElementById("ufModalTip"));
+}
+document.getElementById("ufModal").addEventListener("click", ev => { if (ev.target.id === "ufModal" || ev.target.closest(".uf-modal-x")) fecharModalUF(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && MODAL_UF) fecharModalUF(); });
+window.addEventListener("resize", () => MODAL_UF && desenharModalUF());
+window.addEventListener("resize", () => desenhar());
+document.getElementById("clr").onclick = () => {
+  if (!confirm("Apagar a evolução salva neste navegador?")) return;
+  SERIE = []; HIST.clear(); lsSet("_serie", SERIE); lsSet("_hist", {}); desenhar(); D && render();
+};
+
+document.getElementById("btn").onclick = atualizar;
+document.getElementById("ordUF").onchange = () => desenharUF();
+const fimEl = document.getElementById("fim");
+fimEl.value = FIM_STR;
+const iniEl = document.getElementById("ini");
+iniEl.value = INI_STR;
+iniEl.onchange = () => { INI_STR = iniEl.value || INI_PADRAO; iniEl.value = INI_STR; lsSet("_ini", INI_STR); desenhar(); };
+fimEl.onchange = () => { FIM_STR = fimEl.value || FIM_PADRAO; fimEl.value = FIM_STR; lsSet("_fim", FIM_STR); desenhar(); };
+(() => {
+  const sel = document.getElementById("selEle");
+  sel.value = SEL;
+  sel.onchange = () => { try { localStorage.setItem("apuracao_eleicao_sel", sel.value); } catch (e) {} location.reload(); };
+  document.getElementById("tit").textContent = `ELEIÇÕES ${CFG.ano}`;
+  document.title = `Apuração Presidente ${CFG.ano} · ${CFG.turno}º turno`;
+  document.getElementById("rod").textContent = `Fonte: Tribunal Superior Eleitoral (resultados.tse.jus.br) · eleição ${ELEICAO} (${CFG.ano}, ${CFG.turno}º turno)` +
+    (CFG.estatico ? " · resultado final (dados oficiais embutidos)" : CFG.final ? " · resultado final" : " · atualização automática a cada 30s");
+  if (CFG.final) {
+    document.body.classList.add("final");
+    document.querySelector(".tb-hora .lbl").innerHTML = `Resultado final`;
+    document.getElementById("btn").textContent = "⟳ Recarregar dados";
+  }
+})();
+// ---------- MODO DE VISUALIZAÇÃO (quais blocos aparecem e ajuste à altura da tela) ----------
+const VISOES = ["todos", "cima", "baixo", "painel", "votos", "evolucao", "estados", "rolar"];
+function aplicarVisao(v) {
+  if (!VISOES.includes(v)) v = "todos";
+  VISOES.forEach(x => document.body.classList.remove("vis-" + x));
+  document.body.classList.add("vis-" + v);
+  document.body.classList.toggle("fit", v !== "rolar");
+  document.querySelectorAll("#tbVisao button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  lsSet("_visao", v);
+  medirTopbar();
+  desenhar();
+}
+function medirTopbar() {
+  document.documentElement.style.setProperty("--tb-h", document.querySelector(".topbar").offsetHeight + "px");
+}
+document.querySelectorAll("#tbVisao button").forEach(b => b.onclick = () => aplicarVisao(b.dataset.v));
+window.addEventListener("resize", medirTopbar);
+aplicarVisao(lsGet("_visao", "todos"));
+
+atualizar();
+</script>
+</body>
+</html>
