@@ -87,6 +87,7 @@
   .vis-painel .duo-baixo, .vis-votos .duo-baixo, .vis-evolucao .duo-cima, .vis-estados .duo-cima,
   .vis-painel #secVotos, .vis-votos #duelCard, .vis-evolucao #secUF, .vis-estados #secEvo { display: none !important; }
   .vis-painel .duo, .vis-votos .duo, .vis-evolucao .duo, .vis-estados .duo { grid-template-columns: minmax(0, 1fr); }
+  body:not(.vis-historico):not(.vis-rolar) #secHist, .vis-historico .duo { display: none !important; }
 
   /* ----- ajuste à altura da tela (telas largas): cada linha ocupa metade ou toda a altura útil ----- */
   @media (min-width: 1281px) {
@@ -104,6 +105,8 @@
     body.fit #secEvo { overflow: hidden; }
     body.fit #secEvo .chartwrap { flex: 1 1 auto; min-height: 120px; }
     body.fit #secEvo #chart { height: 100% !important; }
+    body.fit #secHist { height: var(--util); overflow: hidden; display: flex; flex-direction: column; margin: 0; }
+    body.fit #secHist .hist-tab { flex: 1 1 auto; min-height: 0; overflow: auto; }
     body.fit .state-table-wrap { overflow: visible; }
   }
   /* lado a lado: evolução mais alta e cartões por UF mais compactos para as colunas ficarem parecidas */
@@ -545,6 +548,55 @@
   .tip-proj td small { color: var(--pn-mut); }
   #chart .projl { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .08em; fill: #fbbf24; opacity: .8; }
 
+  /* histórico PT × outros */
+  .hist-sec { margin-top: 0; }
+  .hist-ctl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; color: var(--pn-mut); }
+  .hist-ctl label { display: flex; align-items: center; gap: 6px; }
+  .hist-ctl select, .hist-ctl input { font: inherit; font-size: 13px; padding: 5px 9px; border-radius: 7px;
+    background: #0d1f3d; color: var(--pn-txt); border: 1px solid rgba(148,180,220,.35); color-scheme: dark; }
+  .hist-ctl input { width: 220px; }
+  .seg { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(255,255,255,.05); border: 1px solid rgba(148,180,220,.25); }
+  .seg button { font: inherit; font-size: 12px; font-weight: 600; padding: 4px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pn-mut); cursor: pointer; }
+  .seg button.on { background: #1e4f8a; color: #fff; }
+  .hist-leg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--pn-mut); margin-bottom: 8px; }
+  .hist-leg span { display: flex; align-items: center; gap: 5px; }
+  .hist-leg i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .hist-leg i.pt, .hc-bar i { background: var(--pt-cor, #e5222f); }
+  .hist-leg i.ou { background: #64748b; }
+  .hist-tab { border: 1px solid var(--pn-linha); border-radius: 10px; overflow: auto; max-height: 75vh; }
+  .hr { display: grid; align-items: center; border-bottom: 1px solid rgba(148,180,220,.08); min-width: 900px; }
+  .hr > div { padding: 7px 10px; }
+  .hcab { position: sticky; top: 0; z-index: 2; background: #0d1f3d; border-bottom-color: var(--pn-linha); }
+  .hcab .hc b { display: block; font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 13px; color: #fff; text-transform: uppercase; }
+  .hcab .hc small { font-size: 10px; color: var(--pn-mut); }
+  .hcab .hl { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 13px; text-transform: uppercase; color: var(--pn-mut); }
+  .hl { font-size: 13px; color: var(--pn-txt); }
+  .hbr { background: rgba(229,34,47,.08); }
+  .hbr .hl { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 16px; font-weight: 700; color: #fff; }
+  .hreg { background: rgba(255,255,255,.04); cursor: pointer; }
+  .hreg .hl { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 15px; font-weight: 700; color: #fff; }
+  .huf-l { background: rgba(255,255,255,.02); cursor: pointer; }
+  .huf-l .hl { padding-left: 24px; font-weight: 600; }
+  .hmun .hl { padding-left: 44px; font-size: 12px; color: #cbd5e1; }
+  .hreg:hover, .huf-l:hover { background: rgba(56,189,248,.08); }
+  .hmun:hover { background: rgba(255,255,255,.03); }
+  .hseta { display: inline-block; width: 14px; color: var(--pn-mut); }
+  .huf { font-size: 11px; color: var(--pn-mut); font-weight: 400; margin-left: 4px; }
+  .hc { font-variant-numeric: tabular-nums; }
+  .hc.vazio { color: var(--pn-mut); text-align: center; }
+  .hc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .hc-top b { font-family: "Bahnschrift", "Arial Narrow", sans-serif; font-size: 15px; color: #fff; }
+  .hc.ganha .hc-top b { color: #ff6b74; }
+  .hd { font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .hd.up { color: #4ade80; } .hd.dn { color: #f87171; } .hd.eq { color: var(--pn-mut); }
+  .hc-bar { height: 5px; border-radius: 3px; background: #64748b; overflow: hidden; margin: 4px 0 3px; }
+  .hc-bar i { display: block; height: 100%; }
+  .hc-v { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; }
+  .hc-v .pt { color: #fca5a5; } .hc-v .ou { color: #94a3b8; }
+  .hmun .hc-top b { font-size: 13px; }
+  .hist-vazio { padding: 24px; text-align: center; color: var(--pn-mut); }
+  .hist-fonte { font-size: 11px; color: var(--pn-mut); margin-top: 8px; }
+
   .uf-modal { position: fixed; inset: 0; z-index: 100; background: rgba(2,8,20,.72); backdrop-filter: blur(3px);
     display: flex; align-items: center; justify-content: center; padding: 16px; }
   .uf-modal[hidden] { display: none; }
@@ -591,6 +643,7 @@
     <button data-v="votos">Votos</button>
     <button data-v="evolucao">Evolução</button>
     <button data-v="estados">Estados</button>
+    <button data-v="historico" title="Votos do PT × outros desde 2018 por região, estado e município">Histórico</button>
     <span class="sep"></span>
     <button data-v="rolar" title="Layout com rolagem, sem ajustar à altura da tela">Rolar</button>
   </div>
@@ -770,6 +823,32 @@
     <div class="ufgrid" id="ufgrid"></div>
   </section>
   </div>
+
+  <!-- HISTÓRICO: PT × OUTROS POR REGIÃO, ESTADO E MUNICÍPIO -->
+  <section class="evo hist-sec" id="secHist">
+    <div class="hd2">
+      <span class="t">Histórico PT × outros</span>
+      <span class="info">votos para presidente por região, estado e município · PT = Haddad (2018) e Lula (2022, 2026) · outros = soma dos demais candidatos (votos válidos)</span>
+    </div>
+    <div class="hist-ctl">
+      <div class="seg" id="histTurno">
+        <button data-t="todos">Todos</button><button data-t="1">1º turno</button><button data-t="2">2º turno</button>
+      </div>
+      <label>Ordenar municípios
+        <select id="histOrd">
+          <option value="nome">por nome</option>
+          <option value="pct">maior % PT (última eleição)</option>
+          <option value="pctmenor">menor % PT (última eleição)</option>
+          <option value="votos">mais votos no PT</option>
+          <option value="tam">mais votos válidos</option>
+        </select></label>
+      <input type="search" id="histBusca" placeholder="Buscar município…" autocomplete="off">
+      <button class="btn-action" id="histExpandir">Abrir/fechar regiões</button>
+    </div>
+    <div class="hist-leg"><span><i class="pt"></i>PT</span><span><i class="ou"></i>Outros</span><span>▲▼ = variação em p.p. vs mesmo turno da eleição anterior</span><span>clique numa região ou estado para abrir</span></div>
+    <div class="hist-tab" id="histCorpo"><div class="hist-vazio">Carregando dados históricos…</div></div>
+    <div class="hist-fonte">Fonte: TSE — dados abertos (votação por município e zona) e resultados.tse.jus.br (2º turno de 2026).</div>
+  </section>
 
   <!-- MODAL: GRÁFICO AMPLIADO DE UMA UF -->
   <div class="uf-modal" id="ufModal" hidden>
@@ -1937,8 +2016,137 @@ fimEl.onchange = () => { FIM_STR = fimEl.value || FIM_PADRAO; fimEl.value = FIM_
     document.getElementById("btn").textContent = "⟳ Recarregar dados";
   }
 })();
+// ---------- HISTÓRICO PT × OUTROS POR REGIÃO, ESTADO E MUNICÍPIO (2018, 2022, 2026) ----------
+// Dados em dados_historicos.js (gerado por dados_historicos/gerar_historico.py), carregado só quando a seção aparece.
+const HISTV = { turno: lsGet("_hturno", "todos"), ord: lsGet("_hord", "nome"), busca: "", abertos: new Set() };
+let HISTD = null;
+const SIGLA_NOME = { AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal",
+  ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará",
+  PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul",
+  RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins", ZZ: "Exterior" };
+
+function carregarHistorico() {
+  if (window.HIST_PT || document.getElementById("histScript")) return;
+  const sc = document.createElement("script");
+  sc.id = "histScript"; sc.src = "dados_historicos.js";
+  sc.onload = () => desenharHistorico();
+  sc.onerror = () => document.getElementById("histCorpo").innerHTML = `<div class="hist-vazio">Não foi possível carregar dados_historicos.js (o arquivo precisa estar na mesma pasta da página).</div>`;
+  document.head.appendChild(sc);
+}
+
+// soma [pt, outros] por eleição
+function somaLinhas(linhas, n) {
+  const out = Array.from({ length: n }, () => null);
+  linhas.forEach(m => m.forEach((v, i) => { if (!v) return; out[i] = out[i] || [0, 0]; out[i][0] += v[0]; out[i][1] += v[1]; }));
+  return out;
+}
+
+function prepararHistorico() {
+  if (HISTD || !window.HIST_PT) return HISTD;
+  const H = window.HIST_PT, n = H.eleicoes.length;
+  const porUF = {};
+  H.mun.forEach(m => (porUF[m[0]] = porUF[m[0]] || []).push({ uf: m[0], cd: m[1], nome: m[2], v: m.slice(3) }));
+  const uf = {}, reg = {};
+  Object.entries(porUF).forEach(([u, ms]) => uf[u] = somaLinhas(ms.map(m => m.v), n));
+  Object.entries(H.regioes).forEach(([r, ufs]) => reg[r] = somaLinhas(ufs.filter(u => uf[u]).map(u => uf[u]), n));
+  const br = H.eleicoes.map(e => H.total[e.id]);
+  HISTD = { H, n, porUF, uf, reg, br };
+  return HISTD;
+}
+
+function colunasHist() {
+  const { H } = HISTD;
+  return H.eleicoes.map((e, i) => ({ e, i })).filter(c => HISTV.turno === "todos" || String(c.e.turno) === HISTV.turno);
+}
+
+// índice da mesma eleição (mesmo turno) no ciclo anterior, para a variação
+function anteriorHist(i) {
+  const es = HISTD.H.eleicoes, e = es[i];
+  for (let j = i - 1; j >= 0; j--) if (es[j].turno === e.turno && es[j].ano < e.ano) return j;
+  return -1;
+}
+
+const pctPT = v => v && v[0] + v[1] > 0 ? v[0] / (v[0] + v[1]) * 100 : null;
+
+function celulaHist(vals, i) {
+  const v = vals[i];
+  if (!v) return `<div class="hc vazio">–</div>`;
+  const p = pctPT(v), j = anteriorHist(i), pa = j >= 0 ? pctPT(vals[j]) : null;
+  const d = pa != null ? p - pa : null;
+  const dHtml = d == null ? "" : `<span class="hd ${Math.abs(d) < 0.05 ? "eq" : d > 0 ? "up" : "dn"}" title="vs ${HISTD.H.eleicoes[j].ano}">${d > 0 ? "▲" : d < 0 ? "▼" : "="}${fP(Math.abs(d))}</span>`;
+  return `<div class="hc ${p >= 50 ? "ganha" : ""}">
+    <div class="hc-top"><b>${fP(p)}%</b>${dHtml}</div>
+    <div class="hc-bar"><i style="width:${p}%"></i></div>
+    <div class="hc-v"><span class="pt">${fV(v[0])}</span><span class="ou">${fV(v[1])}</span></div>
+  </div>`;
+}
+
+function linhaHist(cls, rotulo, vals, cols, extra = "") {
+  return `<div class="hr ${cls}" ${extra}><div class="hl">${rotulo}</div>${cols.map(c => celulaHist(vals, c.i)).join("")}</div>`;
+}
+
+function ordenarMuns(ms, cols) {
+  const ult = cols.length ? cols[cols.length - 1].i : 0;
+  const lista = [...ms];
+  if (HISTV.ord === "pct") lista.sort((a, b) => (pctPT(b.v[ult]) ?? -1) - (pctPT(a.v[ult]) ?? -1));
+  else if (HISTV.ord === "pctmenor") lista.sort((a, b) => (pctPT(a.v[ult]) ?? 101) - (pctPT(b.v[ult]) ?? 101));
+  else if (HISTV.ord === "votos") lista.sort((a, b) => ((b.v[ult] || [0])[0]) - ((a.v[ult] || [0])[0]));
+  else if (HISTV.ord === "tam") lista.sort((a, b) => ((b.v[ult] || [0, 0])[0] + (b.v[ult] || [0, 0])[1]) - ((a.v[ult] || [0, 0])[0] + (a.v[ult] || [0, 0])[1]));
+  else lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  return lista;
+}
+
+function desenharHistorico() {
+  const corpo = document.getElementById("histCorpo");
+  if (!corpo) return;
+  if (!prepararHistorico()) { corpo.innerHTML = `<div class="hist-vazio">Carregando dados históricos…</div>`; carregarHistorico(); return; }
+  const { H, porUF, uf, reg, br } = HISTD;
+  const cols = colunasHist();
+  const grid = `grid-template-columns: minmax(200px, 1.4fr) repeat(${cols.length}, minmax(130px, 1fr));`;
+  const cab = `<div class="hr hcab" style="${grid}"><div class="hl">Local</div>${cols.map(c =>
+    `<div class="hc"><b>${c.e.ano} · ${c.e.turno}º turno</b><small>PT: ${c.e.pt} × outros</small></div>`).join("")}</div>`;
+
+  let html = "";
+  const q = HISTV.busca.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (q.length >= 2) {
+    const achados = H.mun.filter(m => m[2].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q)).slice(0, 300)
+      .map(m => ({ uf: m[0], cd: m[1], nome: m[2], v: m.slice(3) }));
+    html = ordenarMuns(achados, cols).map(m => linhaHist("hmun", `${m.nome} <span class="huf">${m.uf}</span>`, m.v, cols, `style="${grid}"`)).join("")
+      || `<div class="hist-vazio">Nenhum município encontrado.</div>`;
+  } else {
+    html += linhaHist("hbr", "🇧🇷 Brasil", br, cols, `style="${grid}"`);
+    Object.entries(H.regioes).forEach(([r, ufs]) => {
+      if (!reg[r]) return;
+      const aberto = HISTV.abertos.has("R:" + r);
+      html += linhaHist("hreg", `<span class="hseta">${aberto ? "▾" : "▸"}</span>${r}`, reg[r], cols, `style="${grid}" data-k="R:${r}"`);
+      if (!aberto) return;
+      ufs.filter(u => uf[u]).forEach(u => {
+        const ab = HISTV.abertos.has("U:" + u);
+        html += linhaHist("huf-l", `<span class="hseta">${ab ? "▾" : "▸"}</span>${SIGLA_NOME[u] || u} <span class="huf">${u} · ${porUF[u].length} mun.</span>`, uf[u], cols, `style="${grid}" data-k="U:${u}"`);
+        if (ab) html += ordenarMuns(porUF[u], cols).map(m => linhaHist("hmun", m.nome, m.v, cols, `style="${grid}"`)).join("");
+      });
+    });
+  }
+  corpo.innerHTML = cab + html;
+  corpo.querySelectorAll("[data-k]").forEach(el => el.onclick = () => {
+    const k = el.dataset.k; HISTV.abertos.has(k) ? HISTV.abertos.delete(k) : HISTV.abertos.add(k); desenharHistorico();
+  });
+  document.querySelectorAll("#histTurno button").forEach(b => b.classList.toggle("on", b.dataset.t === HISTV.turno));
+}
+
+document.querySelectorAll("#histTurno button").forEach(b => b.onclick = () => { HISTV.turno = b.dataset.t; lsSet("_hturno", HISTV.turno); desenharHistorico(); });
+document.getElementById("histOrd").value = HISTV.ord;
+document.getElementById("histOrd").onchange = e => { HISTV.ord = e.target.value; lsSet("_hord", HISTV.ord); desenharHistorico(); };
+document.getElementById("histBusca").oninput = e => { HISTV.busca = e.target.value; desenharHistorico(); };
+document.getElementById("histExpandir").onclick = () => {
+  const todos = HISTV.abertos.size > 0;
+  HISTV.abertos.clear();
+  if (!todos && HISTD) Object.keys(HISTD.H.regioes).forEach(r => HISTV.abertos.add("R:" + r));
+  desenharHistorico();
+};
+
 // ---------- MODO DE VISUALIZAÇÃO (quais blocos aparecem e ajuste à altura da tela) ----------
-const VISOES = ["todos", "cima", "baixo", "painel", "votos", "evolucao", "estados", "rolar"];
+const VISOES = ["todos", "cima", "baixo", "painel", "votos", "evolucao", "estados", "historico", "rolar"];
 function aplicarVisao(v) {
   if (!VISOES.includes(v)) v = "todos";
   VISOES.forEach(x => document.body.classList.remove("vis-" + x));
@@ -1948,6 +2156,7 @@ function aplicarVisao(v) {
   lsSet("_visao", v);
   medirTopbar();
   desenhar();
+  if (v === "historico" || v === "rolar") desenharHistorico();
 }
 function medirTopbar() {
   document.documentElement.style.setProperty("--tb-h", document.querySelector(".topbar").offsetHeight + "px");
